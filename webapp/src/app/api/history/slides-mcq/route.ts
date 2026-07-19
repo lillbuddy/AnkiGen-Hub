@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { refreshAccessToken } from '@/lib/google-drive/oauth'
 import { uploadFile } from '@/lib/google-drive/drive-client'
+import { getOrCreateAppFolderId } from '@/lib/google-drive/app-folder'
 
 interface CardMeta {
   filename: string
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
 
   const { data: connection } = await supabase
     .from('google_drive_connections')
-    .select('refresh_token')
+    .select('refresh_token, folder_id')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -65,6 +66,12 @@ export async function POST(request: Request) {
 
   try {
     const { access_token } = await refreshAccessToken(connection.refresh_token)
+    const folderId = await getOrCreateAppFolderId(
+      supabase,
+      user.id,
+      access_token,
+      connection.folder_id
+    )
 
     const cards = await Promise.all(
       metaList.map(async (meta, i) => {
@@ -83,13 +90,15 @@ export async function POST(request: Request) {
             access_token,
             `ankigen-${Date.now()}-${i}-original.${getExtension(meta.filename)}`,
             original.type || 'application/octet-stream',
-            originalBytes
+            originalBytes,
+            folderId
           ),
           uploadFile(
             access_token,
             `ankigen-${Date.now()}-${i}-preview.jpg`,
             'image/jpeg',
-            previewBytes
+            previewBytes,
+            folderId
           ),
         ])
 

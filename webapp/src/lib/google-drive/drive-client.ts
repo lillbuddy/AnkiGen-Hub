@@ -12,11 +12,13 @@ interface DriveFile {
 }
 
 // 建一個空檔案的 metadata，再把內容 PATCH 進去——比手刻 multipart 請求簡單。
+// parentFolderId 有給的話，檔案會建在那個資料夾底下，不給就落在 Drive 最上層。
 export async function uploadFile(
   accessToken: string,
   name: string,
   contentType: string,
-  body: BodyInit
+  body: BodyInit,
+  parentFolderId?: string
 ) {
   const createResponse = await fetch(DRIVE_FILES_URL, {
     method: 'POST',
@@ -24,7 +26,7 @@ export async function uploadFile(
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, ...(parentFolderId ? { parents: [parentFolderId] } : {}) }),
   })
 
   if (!createResponse.ok) {
@@ -52,6 +54,23 @@ export async function uploadFile(
   )
 
   return (await detailResponse.json()) as DriveFile
+}
+
+export async function createFolder(accessToken: string, name: string) {
+  const response = await fetch(DRIVE_FILES_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder' }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`建立資料夾失敗（${response.status}）：${await response.text()}`)
+  }
+
+  return (await response.json()) as DriveFile
 }
 
 export async function createTestFile(accessToken: string, content: string) {
