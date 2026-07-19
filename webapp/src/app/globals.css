@@ -1,26 +1,152 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #1e293b;
+}
+
+/* 白底 + 藍色系配色的設計變數，沿用舊版 AnkiGen Hub 靜態網站的設計。
+   直接寫在 @theme 底下（不是 @theme inline），Tailwind 才會自動生成
+   bg-primary、text-accent、border-panel-border 這類 utility class。 */
+@theme {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-accent: #0ea5e9;
+  --color-accent-light: #0ea5e91a;
+  --color-success: #16a34a;
+  --color-success-hover: #15803d;
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+
+  --color-panel: #ffffff;
+  --color-panel-border: #e2e8f0;
+  --color-subtle: #f1f5f9;
+
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+
+  --shadow-panel-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-panel-md: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* 這些自訂 class 一定要放進 @layer components，不能寫成不在任何 layer 裡的普通 CSS。
+   Tailwind v4 的所有 utility class（w-auto、flex-1 等）都註冊在 layer 裡；沒有放進
+   任何 layer 的一般 CSS，無論寫在檔案裡的順序先後，優先權都會贏過所有 layer 內的規則。
+   結果就是像 .field-input { width:100% } 這種規則會蓋掉外面想加的 w-auto，怎麼加都沒用。
+   放進 @layer components 後，兩者才會照 Tailwind 期待的「utility 蓋過 component」規則走。 */
+@layer components {
+  /* 卡片容器：白底、淡邊框、輕微陰影，取代原本裸的 border border-gray-300 */
+  .card-panel {
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-panel-sm);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .card-panel:hover {
+    box-shadow: var(--shadow-panel-md);
+  }
+
+  /* 按鈕 */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-sm {
+    padding: 5px 12px;
+    font-size: 13px;
+  }
+
+  .btn-xs {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: #ffffff;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+  }
+
+  .btn-secondary {
+    background-color: var(--color-panel);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-panel-border);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-subtle);
+  }
+
+  .btn-success {
+    background-color: var(--color-success);
+    color: #ffffff;
+  }
+
+  .btn-success:hover:not(:disabled) {
+    background-color: var(--color-success-hover);
+  }
+
+  .btn-danger-outline {
+    background-color: transparent;
+    color: var(--color-danger);
+    border: 1px solid rgba(220, 38, 38, 0.4);
+  }
+
+  .btn-danger-outline:hover:not(:disabled) {
+    background-color: rgba(220, 38, 38, 0.08);
+  }
+
+  /* 表單輸入框 */
+  .field-input {
+    width: 100%;
+    border: 1px solid var(--color-panel-border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    background-color: var(--color-panel);
+    color: var(--color-text-primary);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .field-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-light);
+  }
+
+  textarea.field-input {
+    font-family: inherit;
+  }
 }

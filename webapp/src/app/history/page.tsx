@@ -20,7 +20,7 @@ export default async function HistoryPage() {
     return (
       <main className="mx-auto max-w-2xl p-6 text-center">
         <p>請先登入才能查看歷史紀錄。</p>
-        <Link href="/login" className="text-blue-600 underline">
+        <Link href="/login" className="text-primary underline">
           前往登入
         </Link>
       </main>
@@ -38,35 +38,35 @@ export default async function HistoryPage() {
     <main className="mx-auto max-w-2xl p-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">歷史紀錄</h1>
-        <Link href="/" className="text-sm text-blue-600 underline">
+        <Link href="/" className="text-sm text-primary underline">
           回首頁
         </Link>
       </div>
 
       {(!records || records.length === 0) && (
-        <p className="text-sm text-gray-500">目前還沒有任何歷史紀錄。</p>
+        <p className="text-sm text-text-secondary">目前還沒有任何歷史紀錄。</p>
       )}
 
       <div className="flex flex-col gap-3">
         {records?.map((record) => (
           <div
             key={record.id}
-            className="flex items-center justify-between rounded border border-gray-300 p-3"
+            className="flex items-center justify-between card-panel p-3"
           >
             <div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-gray-100 px-2 py-0.5 text-xs">
                   {SOURCE_LABELS[record.source] ?? record.source}
                 </span>
-                <span className="text-xs text-gray-500">{formatDate(record.created_at)}</span>
+                <span className="text-xs text-text-secondary">{formatDate(record.created_at)}</span>
               </div>
               <div className="mt-1 text-sm">{record.purpose?.trim() || '（無備註）'}</div>
-              <div className="text-xs text-gray-500">{record.card_count} 張卡片</div>
+              <div className="text-xs text-text-secondary">{record.card_count} 張卡片</div>
             </div>
             <div className="flex gap-2">
               <Link
                 href={`/history/${record.id}`}
-                className="rounded border border-gray-300 px-3 py-1 text-sm"
+                className="btn btn-secondary btn-sm"
               >
                 查看
               </Link>

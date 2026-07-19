@@ -256,24 +256,24 @@ export default function ImageMcqPage() {
     <main className="mx-auto max-w-2xl p-6">
       <h1 className="mb-1 text-xl font-semibold">圖片選擇題工具（最簡版）</h1>
       {fromDrawer && (
-        <p className="mb-3 text-sm text-gray-500">
+        <p className="mb-3 text-sm text-text-secondary">
           已經從抽屜載入 {cards.length} 張卡片，可以直接修改，也可以再選新的圖片一起加進來。
         </p>
       )}
 
-      <div className="mb-4 flex flex-col gap-2 rounded border border-gray-300 p-3">
+      <div className="mb-4 flex flex-col gap-2 card-panel p-3">
         <div className="flex gap-2">
           <input
             type="password"
             placeholder="Gemini API Key（AI 產生干擾選項用）"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+            className="flex-1 field-input"
           />
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            className="rounded border border-gray-300 px-2 py-1 text-sm"
+            className="field-input w-auto"
           >
             <option value="gemini-3.5-flash">gemini-3.5-flash（推薦）</option>
             <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite（極速）</option>
@@ -281,11 +281,11 @@ export default function ImageMcqPage() {
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <label className="rounded border border-gray-300 px-2 py-1 text-sm">
+          <label className="btn btn-secondary btn-sm cursor-pointer">
             上傳詞彙表 (.md)
             <input type="file" accept=".md,text/markdown" onChange={handleGlossaryFile} className="hidden" />
           </label>
-          {glossaryStatus && <span className="text-xs text-gray-500">{glossaryStatus}</span>}
+          {glossaryStatus && <span className="text-xs text-text-secondary">{glossaryStatus}</span>}
         </div>
       </div>
 
@@ -293,7 +293,7 @@ export default function ImageMcqPage() {
 
       <div className="flex flex-col gap-4">
         {cards.map((card, index) => (
-          <div key={card.localId} className="flex gap-4 rounded border border-gray-300 p-3">
+          <div key={card.localId} className="flex gap-4 card-panel p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={card.previewObjectUrl}
@@ -301,7 +301,7 @@ export default function ImageMcqPage() {
               className="h-24 w-24 flex-shrink-0 rounded object-cover"
             />
             <div className="flex flex-1 flex-col gap-2">
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-text-secondary">
                 第 {index + 1} 張：{card.filename}
                 {card.kind === 'reused' && '（沿用舊圖片）'}
               </div>
@@ -309,7 +309,7 @@ export default function ImageMcqPage() {
                 placeholder="題目"
                 value={card.questionText}
                 onChange={(e) => updateCard(card.localId, { questionText: e.target.value })}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
+                className="field-input"
               />
               <div className="grid grid-cols-3 gap-1">
                 {OPTION_KEYS.map((key, i) => (
@@ -318,7 +318,7 @@ export default function ImageMcqPage() {
                     placeholder={`選項 ${String.fromCharCode(65 + i)}`}
                     value={card[key]}
                     onChange={(e) => updateCard(card.localId, { [key]: e.target.value })}
-                    className="rounded border border-gray-300 px-2 py-1 text-sm"
+                    className="field-input"
                   />
                 ))}
               </div>
@@ -327,7 +327,7 @@ export default function ImageMcqPage() {
                   placeholder="正確答案，例如 A 或 AC"
                   value={card.answer}
                   onChange={(e) => updateCard(card.localId, { answer: e.target.value })}
-                  className="rounded border border-gray-300 px-2 py-1 text-sm"
+                  className="field-input"
                 />
                 <label className="flex items-center gap-1 text-sm">
                   <input
@@ -342,19 +342,19 @@ export default function ImageMcqPage() {
                 placeholder="備註（選填）"
                 value={card.notes}
                 onChange={(e) => updateCard(card.localId, { notes: e.target.value })}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
+                className="field-input"
               />
               <div className="flex gap-3">
                 <button
                   onClick={() => handleGenerateDistractors(card.localId)}
                   disabled={generatingFor === card.localId}
-                  className="text-xs text-blue-600 underline disabled:opacity-50"
+                  className="text-xs text-primary underline disabled:opacity-50"
                 >
                   {generatingFor === card.localId ? '產生中...' : 'AI 產生干擾選項（B/C/D）'}
                 </button>
                 <button
                   onClick={() => removeCard(card.localId)}
-                  className="text-xs text-red-600 underline"
+                  className="text-xs text-danger underline"
                 >
                   移除這張卡片
                 </button>
@@ -370,12 +370,12 @@ export default function ImageMcqPage() {
             placeholder="這批卡片是為了什麼而做的？（選填）"
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
-            className="rounded border border-gray-300 px-2 py-1 text-sm"
+            className="field-input"
           />
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded bg-blue-600 px-3 py-2 text-white disabled:opacity-50"
+            className="btn btn-primary"
           >
             {saving ? '存入中...' : '存入歷史紀錄'}
           </button>
@@ -383,7 +383,7 @@ export default function ImageMcqPage() {
       )}
 
       {message && (
-        <p className={`mt-3 text-sm ${message.type === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
+        <p className={`mt-3 text-sm ${message.type === 'ok' ? 'text-success' : 'text-danger'}`}>
           {message.text}
         </p>
       )}

@@ -27,7 +27,7 @@ export default function DeleteHistoryButton({ recordId }: { recordId: string }) 
     <button
       onClick={handleDelete}
       disabled={deleting}
-      className="rounded border border-red-300 px-3 py-1 text-sm text-red-600 disabled:opacity-50"
+      className="btn btn-danger-outline btn-sm"
     >
       {deleting ? '刪除中...' : '刪除'}
     </button>

@@ -22,13 +22,13 @@ export default function DrawerPage() {
     <main className="mx-auto max-w-2xl p-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">抽屜</h1>
-        <Link href="/history" className="text-sm text-blue-600 underline">
+        <Link href="/history" className="text-sm text-primary underline">
           回歷史紀錄列表
         </Link>
       </div>
 
       {cards.length === 0 ? (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-text-secondary">
           抽屜是空的。到歷史紀錄的「查看」頁面，點卡片旁邊的「加入抽屜」就可以把想沿用的卡片收集到這裡。
         </p>
       ) : (
@@ -37,7 +37,7 @@ export default function DrawerPage() {
             {cards.map((card) => (
               <div
                 key={card.key}
-                className="flex items-center gap-3 rounded border border-gray-300 p-3"
+                className="flex items-center gap-3 card-panel p-3"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -48,7 +48,7 @@ export default function DrawerPage() {
                 <div className="flex-1 text-sm">{card.questionText || '（沒有題目）'}</div>
                 <button
                   onClick={() => handleRemove(card.key)}
-                  className="text-xs text-red-600 underline"
+                  className="text-xs text-danger underline"
                 >
                   移除
                 </button>
@@ -58,7 +58,7 @@ export default function DrawerPage() {
 
           <Link
             href="/tools/image-mcq?from=drawer"
-            className="mt-4 inline-block rounded bg-blue-600 px-3 py-2 text-white"
+            className="mt-4 inline-block btn btn-primary"
           >
             開始整理（{cards.length} 張卡片）
           </Link>

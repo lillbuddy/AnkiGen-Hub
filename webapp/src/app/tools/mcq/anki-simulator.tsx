@@ -48,7 +48,7 @@ export default function AnkiSimulator({ card }: { card: McqCard | null }) {
   }, [])
 
   if (!card) {
-    return <p className="text-sm text-gray-500">目前沒有卡片可以預覽。</p>
+    return <p className="text-sm text-text-secondary">目前沒有卡片可以預覽。</p>
   }
 
   const options = OPTION_KEYS.map((key, i) => ({
@@ -158,7 +158,7 @@ export default function AnkiSimulator({ card }: { card: McqCard | null }) {
       </div>
       <button
         onClick={() => setFlipped((f) => !f)}
-        className="rounded border border-gray-300 px-3 py-1 text-sm"
+        className="btn btn-secondary btn-sm"
       >
         翻轉卡片（Space）
       </button>

@@ -30,7 +30,7 @@ function CodeBlock({ label, content }: { label: string; content: string }) {
     <div>
       <div className="mb-1 flex items-center justify-between">
         <span className="text-sm font-medium">{label}</span>
-        <button onClick={handleCopy} className="rounded border border-gray-300 px-2 py-0.5 text-xs">
+        <button onClick={handleCopy} className="btn btn-secondary btn-xs">
           {copied ? '已複製！' : '複製'}
         </button>
       </div>
@@ -38,7 +38,7 @@ function CodeBlock({ label, content }: { label: string; content: string }) {
         readOnly
         value={content}
         rows={10}
-        className="w-full rounded border border-gray-300 p-2 font-mono text-xs"
+        className="field-input w-full font-mono text-xs"
       />
     </div>
   )
@@ -48,19 +48,19 @@ export default function AnkiTemplatePanel() {
   const [tab, setTab] = useState<TabId>('fields')
 
   return (
-    <div className="rounded border border-gray-300 p-3">
-      <p className="mb-2 text-sm text-gray-600">
+    <div className="card-panel p-3">
+      <p className="mb-2 text-sm text-text-secondary">
         只要在 Anki 新增一個自訂卡片類型，把以下內容貼入對應位置，就能在手機/電腦呈現一樣的效果。
       </p>
-      <div className="mb-3 flex gap-3 border-b border-gray-200 text-sm">
+      <div className="mb-3 flex gap-3 border-b border-panel-border text-sm">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`pb-2 ${
               tab === t.id
-                ? 'border-b-2 border-blue-600 font-medium text-blue-600'
-                : 'text-gray-500'
+                ? 'border-b-2 border-primary font-medium text-primary'
+                : 'text-text-secondary'
             }`}
           >
             {t.label}
@@ -70,11 +70,11 @@ export default function AnkiTemplatePanel() {
 
       {tab === 'fields' && (
         <div className="flex flex-col gap-1 text-sm">
-          <p className="mb-1 text-gray-600">在 Anki 新增卡片類型時，請建立且精確命名以下 10 個欄位：</p>
+          <p className="mb-1 text-text-secondary">在 Anki 新增卡片類型時，請建立且精確命名以下 10 個欄位：</p>
           {ANKI_FIELDS.map((f) => (
             <div key={f.name}>
               <code className="rounded bg-gray-100 px-1">{f.name}</code>{' '}
-              <span className="text-gray-500">{f.desc}</span>
+              <span className="text-text-secondary">{f.desc}</span>
             </div>
           ))}
         </div>

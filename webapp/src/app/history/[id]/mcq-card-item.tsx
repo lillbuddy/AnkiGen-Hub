@@ -6,7 +6,7 @@ export default function McqCardItem({ card }: { card: McqCard }) {
   const correctLetters = (card.answer || '').toUpperCase().replace(/[^A-F]/g, '').split('')
 
   return (
-    <div className="rounded border border-gray-300 p-3">
+    <div className="card-panel p-3">
       <div className="text-sm font-medium">{card.questionText}</div>
       <div className="grid grid-cols-2 gap-x-2 text-sm">
         {OPTION_KEYS.map((k, i) => {
@@ -15,13 +15,13 @@ export default function McqCardItem({ card }: { card: McqCard }) {
           if (!text) return null
           const isCorrect = correctLetters.includes(letter)
           return (
-            <div key={k} className={isCorrect ? 'font-semibold text-green-700' : ''}>
+            <div key={k} className={isCorrect ? 'font-semibold text-success' : ''}>
               {letter}. {text}
             </div>
           )
         })}
       </div>
-      {card.notes && <div className="text-xs text-gray-500">{card.notes}</div>}
+      {card.notes && <div className="text-xs text-text-secondary">{card.notes}</div>}
     </div>
   )
 }

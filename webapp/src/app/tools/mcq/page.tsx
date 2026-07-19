@@ -171,12 +171,12 @@ export default function McqToolPage() {
             placeholder="Gemini API Key"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+            className="flex-1 field-input"
           />
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            className="rounded border border-gray-300 px-2 py-1 text-sm"
+            className="field-input w-auto"
           >
             <option value="gemini-3.5-flash">gemini-3.5-flash（推薦）</option>
             <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite（極速）</option>
@@ -188,17 +188,17 @@ export default function McqToolPage() {
           value={sourceText}
           onChange={(e) => setSourceText(e.target.value)}
           rows={8}
-          className="rounded border border-gray-300 px-2 py-1 text-sm"
+          className="field-input"
         />
         <div className="flex gap-2">
           <button
             onClick={handleParse}
             disabled={parsing}
-            className="rounded bg-blue-600 px-3 py-2 text-white disabled:opacity-50"
+            className="btn btn-primary"
           >
             {parsing ? '解析中...' : 'AI 解析'}
           </button>
-          <button onClick={addEmptyCard} className="rounded border border-gray-300 px-3 py-2 text-sm">
+          <button onClick={addEmptyCard} className="btn btn-secondary">
             手動新增一張空卡片
           </button>
         </div>
@@ -206,13 +206,13 @@ export default function McqToolPage() {
 
       <div className="flex flex-col gap-4">
         {cards.map((card, index) => (
-          <div key={card.localId} className="rounded border border-gray-300 p-3">
-            <div className="mb-2 text-xs text-gray-500">第 {index + 1} 張</div>
+          <div key={card.localId} className="card-panel p-3">
+            <div className="mb-2 text-xs text-text-secondary">第 {index + 1} 張</div>
             <input
               placeholder="題目"
               value={card.questionText}
               onChange={(e) => updateCard(card.localId, { questionText: e.target.value })}
-              className="mb-2 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+              className="mb-2 w-full field-input"
             />
             <div className="mb-2 grid grid-cols-3 gap-1">
               {OPTION_KEYS.map((key, i) => (
@@ -221,7 +221,7 @@ export default function McqToolPage() {
                   placeholder={`選項 ${String.fromCharCode(65 + i)}`}
                   value={card[key]}
                   onChange={(e) => updateCard(card.localId, { [key]: e.target.value })}
-                  className="rounded border border-gray-300 px-2 py-1 text-sm"
+                  className="field-input"
                 />
               ))}
             </div>
@@ -230,7 +230,7 @@ export default function McqToolPage() {
                 placeholder="正確答案，例如 A 或 AC"
                 value={card.answer}
                 onChange={(e) => updateCard(card.localId, { answer: e.target.value })}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
+                className="field-input"
               />
               <label className="flex items-center gap-1 text-sm">
                 <input
@@ -245,18 +245,18 @@ export default function McqToolPage() {
               placeholder="備註（選填）"
               value={card.notes}
               onChange={(e) => updateCard(card.localId, { notes: e.target.value })}
-              className="mb-2 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+              className="mb-2 w-full field-input"
             />
             <div className="flex gap-3">
               <button
                 onClick={() => setPreviewIndex(index)}
-                className="text-xs text-blue-600 underline"
+                className="text-xs text-primary underline"
               >
                 在下方模擬器預覽這張
               </button>
               <button
                 onClick={() => removeCard(card.localId)}
-                className="text-xs text-red-600 underline"
+                className="text-xs text-danger underline"
               >
                 移除這張卡片
               </button>
@@ -271,19 +271,19 @@ export default function McqToolPage() {
             placeholder="這批卡片是為了什麼而做的？（選填）"
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
-            className="rounded border border-gray-300 px-2 py-1 text-sm"
+            className="field-input"
           />
           <div className="flex gap-2">
             <button
               onClick={handleSave}
               disabled={saving}
-              className="rounded bg-blue-600 px-3 py-2 text-white disabled:opacity-50"
+              className="btn btn-primary"
             >
               {saving ? '存入中...' : '存入歷史紀錄'}
             </button>
             <button
               onClick={handleDownloadCsv}
-              className="rounded border border-gray-300 px-3 py-2 text-sm"
+              className="btn btn-secondary"
             >
               下載 CSV
             </button>
@@ -292,7 +292,7 @@ export default function McqToolPage() {
       )}
 
       {message && (
-        <p className={`mt-3 text-sm ${message.type === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
+        <p className={`mt-3 text-sm ${message.type === 'ok' ? 'text-success' : 'text-danger'}`}>
           {message.text}
         </p>
       )}

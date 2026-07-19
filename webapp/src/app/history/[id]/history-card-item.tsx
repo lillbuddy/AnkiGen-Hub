@@ -37,7 +37,7 @@ export default function HistoryCardItem({
   const correctLetters = (card.answer || '').toUpperCase().replace(/[^A-F]/g, '').split('')
 
   return (
-    <div className="flex gap-4 rounded border border-gray-300 p-3">
+    <div className="flex gap-4 card-panel p-3">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`/api/google-drive/image/${card.drivePreviewFileId}`}
@@ -53,24 +53,24 @@ export default function HistoryCardItem({
             if (!text) return null
             const isCorrect = correctLetters.includes(letter)
             return (
-              <div key={k} className={isCorrect ? 'font-semibold text-green-700' : ''}>
+              <div key={k} className={isCorrect ? 'font-semibold text-success' : ''}>
                 {letter}. {text}
               </div>
             )
           })}
         </div>
-        {card.notes && <div className="text-xs text-gray-500">{card.notes}</div>}
+        {card.notes && <div className="text-xs text-text-secondary">{card.notes}</div>}
         <div className="mt-1 flex gap-3">
           <a
             href={`/api/google-drive/image/${card.driveFileId}`}
             download={card.filename}
-            className="text-xs text-blue-600 underline"
+            className="text-xs text-primary underline"
           >
             下載原始圖片
           </a>
           <button
             onClick={toggleDrawer}
-            className={`text-xs underline ${inDrawer ? 'text-red-600' : 'text-blue-600'}`}
+            className={`text-xs underline ${inDrawer ? 'text-danger' : 'text-primary'}`}
           >
             {inDrawer ? '從抽屜移除' : '加入抽屜'}
           </button>

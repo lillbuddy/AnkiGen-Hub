@@ -14,10 +14,7 @@ export default function SignOutButton() {
   }
 
   return (
-    <button
-      onClick={handleSignOut}
-      className="rounded border border-gray-300 px-3 py-1 text-sm"
-    >
+    <button onClick={handleSignOut} className="btn btn-secondary btn-sm">
       登出
     </button>
   )

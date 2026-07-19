@@ -24,7 +24,7 @@ export default function DownloadCsvButton({
   }
 
   return (
-    <button onClick={handleDownload} className="rounded border border-gray-300 px-3 py-1 text-sm">
+    <button onClick={handleDownload} className="btn btn-secondary btn-sm">
       下載 CSV
     </button>
   )

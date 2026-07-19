@@ -91,7 +91,7 @@ export default function ImageOcclusionPage() {
   return (
     <main className="mx-auto max-w-2xl p-6">
       <h1 className="mb-1 text-xl font-semibold">Image Occlusion 圖片標記工具</h1>
-      <p className="mb-4 text-sm text-gray-500">
+      <p className="mb-4 text-sm text-text-secondary">
         這裡只準備圖片和備註，實際的遮蓋框線要匯入 Anki 後，在 Anki 裡對每張圖片手動畫。
       </p>
 
@@ -99,7 +99,7 @@ export default function ImageOcclusionPage() {
 
       <div className="flex flex-col gap-4">
         {cards.map((card, index) => (
-          <div key={card.localId} className="flex gap-4 rounded border border-gray-300 p-3">
+          <div key={card.localId} className="flex gap-4 card-panel p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={card.previewObjectUrl}
@@ -107,18 +107,18 @@ export default function ImageOcclusionPage() {
               className="h-24 w-24 flex-shrink-0 rounded object-cover"
             />
             <div className="flex flex-1 flex-col gap-2">
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-text-secondary">
                 第 {index + 1} 張：{card.filename}
               </div>
               <textarea
                 placeholder="備註（選填）"
                 value={card.notes}
                 onChange={(e) => updateCard(card.localId, { notes: e.target.value })}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
+                className="field-input"
               />
               <button
                 onClick={() => removeCard(card.localId)}
-                className="self-start text-xs text-red-600 underline"
+                className="self-start text-xs text-danger underline"
               >
                 移除這張卡片
               </button>
@@ -133,12 +133,12 @@ export default function ImageOcclusionPage() {
             placeholder="這批卡片是為了什麼而做的？（選填）"
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
-            className="rounded border border-gray-300 px-2 py-1 text-sm"
+            className="field-input"
           />
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded bg-blue-600 px-3 py-2 text-white disabled:opacity-50"
+            className="btn btn-primary"
           >
             {saving ? '存入中...' : '存入歷史紀錄'}
           </button>
@@ -146,7 +146,7 @@ export default function ImageOcclusionPage() {
       )}
 
       {message && (
-        <p className={`mt-3 text-sm ${message.type === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
+        <p className={`mt-3 text-sm ${message.type === 'ok' ? 'text-success' : 'text-danger'}`}>
           {message.text}
         </p>
       )}

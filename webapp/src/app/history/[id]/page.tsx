@@ -48,7 +48,7 @@ export default async function HistoryDetailPage({
     return (
       <main className="mx-auto max-w-2xl p-6 text-center">
         <p>找不到這筆歷史紀錄，可能已經被刪除了。</p>
-        <Link href="/history" className="text-blue-600 underline">
+        <Link href="/history" className="text-primary underline">
           回歷史紀錄列表
         </Link>
       </main>
@@ -63,12 +63,12 @@ export default async function HistoryDetailPage({
         </h1>
         <div className="flex items-center gap-3">
           <DownloadCsvButton source={record.source} cards={record.cards} />
-          <Link href="/history" className="text-sm text-blue-600 underline">
+          <Link href="/history" className="text-sm text-primary underline">
             回歷史紀錄列表
           </Link>
         </div>
       </div>
-      <div className="mb-4 text-sm text-gray-500">
+      <div className="mb-4 text-sm text-text-secondary">
         {formatDate(record.created_at)} ・ {record.purpose?.trim() || '（無備註）'} ・{' '}
         {record.card_count} 張卡片
       </div>
