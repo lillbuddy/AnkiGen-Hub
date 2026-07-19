@@ -33,12 +33,37 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
+  --font-display: var(--font-outfit);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* 背景裝飾：柔和漸層圓形，固定在畫面上不隨內容捲動，沿用舊版靜態網站的設計 */
+.bg-glow {
+  position: fixed;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(150px);
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.4;
+}
+
+.bg-glow-1 {
+  background: rgba(37, 99, 235, 0.15);
+  top: -200px;
+  right: -100px;
+}
+
+.bg-glow-2 {
+  background: rgba(14, 165, 233, 0.12);
+  bottom: 100px;
+  left: -150px;
 }
 
 /* 這些自訂 class 一定要放進 @layer components，不能寫成不在任何 layer 裡的普通 CSS。
@@ -148,5 +173,52 @@ body {
 
   textarea.field-input {
     font-family: inherit;
+  }
+
+  /* 首頁的工具卡片，沿用舊版靜態網站 home.css 的設計 */
+  .tool-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-panel);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-panel-sm);
+    padding: 28px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+  }
+
+  .tool-card:hover {
+    box-shadow: var(--shadow-panel-md);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  .tool-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background-color: rgba(37, 99, 235, 0.1);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+
+  .tool-cta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  .tool-card:hover .tool-cta {
+    gap: 10px;
   }
 }

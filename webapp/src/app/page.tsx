@@ -31,67 +31,100 @@ export default async function Home({
     driveConnected = !!data
   }
 
+  if (!user) {
+    return (
+      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col items-center justify-center p-6">
+        <div className="card-panel flex w-full flex-col items-center gap-4 p-8 text-center">
+          <h1 className="font-display text-xl font-bold text-text-primary">AnkiGen Hub</h1>
+          <p className="text-sm text-text-secondary">尚未登入</p>
+          <Link href="/login" className="btn btn-primary w-full">
+            前往登入
+          </Link>
+        </div>
+      </main>
+    )
+  }
+
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col items-center justify-center p-6">
-      <div className="card-panel flex w-full flex-col items-center gap-4 p-8 text-center">
-        <h1 className="text-xl font-semibold text-text-primary">AnkiGen Hub</h1>
-        {user ? (
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
+      <div className="mb-10 text-center">
+        <h1 className="mb-3 font-display text-3xl font-extrabold tracking-tight text-text-primary">
+          把讀書筆記與圖片，變成 Anki 卡片
+        </h1>
+        <p className="text-sm text-text-secondary">選擇下面的工具開始使用。</p>
+      </div>
+
+      {params.drive_connected && (
+        <p className="mb-4 text-center text-sm text-success">已成功連結 Google Drive！</p>
+      )}
+      {params.drive_error && (
+        <p className="mb-4 text-center text-sm text-danger">
+          連結 Google Drive 失敗：{DRIVE_ERROR_MESSAGES[params.drive_error] ?? params.drive_error}
+        </p>
+      )}
+
+      <div className="mb-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <Link href="/tools/mcq" className="tool-card">
+          <div className="tool-icon">📝</div>
+          <h2 className="mb-2 font-display text-lg font-bold text-text-primary">文字選擇題產生器</h2>
+          <p className="flex-1 text-sm text-text-secondary">
+            貼上文字內容，用 AI 解析成題目、選項、答案，即時預覽 Anki 卡片效果，一鍵匯出可直接匯入 Anki 的萬用選擇題卡片。
+          </p>
+          <span className="tool-cta">開始製作 →</span>
+        </Link>
+
+        {driveConnected ? (
           <>
-            <p className="text-sm text-text-secondary">
-              已登入：<span className="font-mono">{user.email}</span>
-            </p>
-
-            {params.drive_connected && (
-              <p className="text-sm text-success">已成功連結 Google Drive！</p>
-            )}
-            {params.drive_error && (
-              <p className="text-sm text-danger">
-                連結 Google Drive 失敗：
-                {DRIVE_ERROR_MESSAGES[params.drive_error] ?? params.drive_error}
+            <Link href="/tools/image-mcq" className="tool-card">
+              <div className="tool-icon">🖼️</div>
+              <h2 className="mb-2 font-display text-lg font-bold text-text-primary">圖片選擇題工具</h2>
+              <p className="flex-1 text-sm text-text-secondary">
+                選取本機圖片，標上題目、選項、答案，AI 還能幫你產生誘答性的干擾選項，存進你自己的 Google Drive。
               </p>
-            )}
-
-            <Link href="/tools/mcq" className="btn btn-primary w-full">
-              文字選擇題產生器
-            </Link>
-            <Link href="/history" className="text-sm text-primary underline">
-              歷史紀錄
+              <span className="tool-cta">開始標記 →</span>
             </Link>
 
-            {driveConnected ? (
-              <>
-                <p className="text-sm text-text-secondary">已連結 Google Drive</p>
-                <a
-                  href="/api/google-drive/test"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary underline"
-                >
-                  測試 Google Drive 讀寫
-                </a>
-                <Link href="/tools/image-mcq" className="btn btn-primary w-full">
-                  圖片選擇題工具
-                </Link>
-                <Link href="/tools/image-occlusion" className="btn btn-primary w-full">
-                  Image Occlusion 工具
-                </Link>
-              </>
-            ) : (
-              <a href="/api/google-drive/connect" className="btn btn-success w-full">
-                連結 Google Drive
-              </a>
-            )}
-
-            <SignOutButton />
+            <Link href="/tools/image-occlusion" className="tool-card">
+              <div className="tool-icon">✂️</div>
+              <h2 className="mb-2 font-display text-lg font-bold text-text-primary">Image Occlusion 工具</h2>
+              <p className="flex-1 text-sm text-text-secondary">
+                準備圖片和備註，匯出成 Anki 內建 Image Occlusion 筆記類型的 CSV，之後在 Anki 裡手動框選遮蓋範圍。
+              </p>
+              <span className="tool-cta">開始標記 →</span>
+            </Link>
           </>
         ) : (
-          <>
-            <p className="text-sm text-text-secondary">尚未登入</p>
-            <Link href="/login" className="btn btn-primary w-full">
-              前往登入
-            </Link>
-          </>
+          <a href="/api/google-drive/connect" className="tool-card">
+            <div className="tool-icon">🔗</div>
+            <h2 className="mb-2 font-display text-lg font-bold text-text-primary">連結 Google Drive</h2>
+            <p className="flex-1 text-sm text-text-secondary">
+              圖片選擇題和 Image Occlusion 這兩個工具需要把圖片存進你自己的 Google Drive，先連結帳號才能使用。
+            </p>
+            <span className="tool-cta">前往連結 →</span>
+          </a>
         )}
+      </div>
+
+      <div className="card-panel flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="text-text-secondary">
+            已登入：<span className="font-mono">{user.email}</span>
+          </span>
+          <Link href="/history" className="text-primary underline">
+            歷史紀錄
+          </Link>
+          {driveConnected && (
+            <a
+              href="/api/google-drive/test"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              測試 Google Drive 讀寫
+            </a>
+          )}
+        </div>
+        <SignOutButton />
       </div>
     </main>
   )

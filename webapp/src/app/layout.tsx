@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter } from "next/font/google";
+import { Geist_Mono, Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import DrawerIndicator from "./drawer-indicator";
 import SiteHeader from "./site-header";
@@ -7,6 +7,11 @@ import SiteFooter from "./site-footer";
 
 const inter = Inter({
   variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
@@ -28,11 +33,15 @@ export default function RootLayout({
   return (
     <html
       lang="zh-TW"
-      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${outfit.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="relative flex min-h-full flex-col overflow-x-hidden">
+        {/* 背景裝飾：柔和漸層圓形，沿用舊版靜態網站的設計 */}
+        <div className="bg-glow bg-glow-1" />
+        <div className="bg-glow bg-glow-2" />
+
         <SiteHeader />
-        <div className="flex flex-1 flex-col">{children}</div>
+        <div className="relative flex flex-1 flex-col">{children}</div>
         <SiteFooter />
         <DrawerIndicator />
       </body>
