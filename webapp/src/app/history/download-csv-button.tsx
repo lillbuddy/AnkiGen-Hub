@@ -1,21 +1,21 @@
 'use client'
 
 import { buildMcqCsv, buildSlidesMcqCsv, buildSlidesOcclusionCsv, downloadCsv } from '@/lib/export-csv'
-import type { McqCard, SlidesMcqCard } from '@/lib/history-types'
+import type { AnyCard, McqCard, OcclusionCard, SlidesMcqCard } from '@/lib/history-types'
 
 export default function DownloadCsvButton({
   source,
   cards,
 }: {
   source: string
-  cards: (McqCard | SlidesMcqCard)[]
+  cards: AnyCard[]
 }) {
   function handleDownload() {
     let content: string
     if (source === 'mcq') {
-      content = buildMcqCsv(cards)
+      content = buildMcqCsv(cards as McqCard[])
     } else if (source === 'slides-occlusion') {
-      content = buildSlidesOcclusionCsv(cards as SlidesMcqCard[])
+      content = buildSlidesOcclusionCsv(cards as OcclusionCard[])
     } else {
       content = buildSlidesMcqCsv(cards as SlidesMcqCard[])
     }

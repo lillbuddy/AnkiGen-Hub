@@ -13,19 +13,30 @@ export interface McqCard {
   notes: string
 }
 
-// SlidesMcqCard：圖片選擇題（source = 'slides-mcq'），比 McqCard 多兩個 Drive 檔案 ID。
-export interface SlidesMcqCard extends McqCard {
+// 有圖片的卡片都會有這三個欄位：檔名、原始圖和縮圖各自的 Drive 檔案 ID。
+export interface DriveImageFields {
   filename: string
   driveFileId: string
   drivePreviewFileId: string
 }
+
+// SlidesMcqCard：圖片選擇題（source = 'slides-mcq'）。
+export interface SlidesMcqCard extends McqCard, DriveImageFields {}
+
+// OcclusionCard：Image Occlusion（source = 'slides-occlusion'），只有圖片和備註，
+// 沒有題目/選項/答案——實際的遮蓋框線要在 Anki 裡手動畫。
+export interface OcclusionCard extends DriveImageFields {
+  notes: string
+}
+
+export type AnyCard = McqCard | SlidesMcqCard | OcclusionCard
 
 export interface HistoryRecord {
   id: string
   source: string
   purpose: string | null
   card_count: number
-  cards: (McqCard | SlidesMcqCard)[]
+  cards: AnyCard[]
   created_at: string
 }
 

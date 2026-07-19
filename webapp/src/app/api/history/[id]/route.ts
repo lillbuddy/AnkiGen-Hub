@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { refreshAccessToken } from '@/lib/google-drive/oauth'
 import { deleteFile } from '@/lib/google-drive/drive-client'
-import type { HistoryRecord, SlidesMcqCard } from '@/lib/history-types'
+import type { HistoryRecord, OcclusionCard, SlidesMcqCard } from '@/lib/history-types'
 
-function isSlidesCard(card: HistoryRecord['cards'][number]): card is SlidesMcqCard {
+function hasDriveFiles(
+  card: HistoryRecord['cards'][number]
+): card is SlidesMcqCard | OcclusionCard {
   return typeof (card as SlidesMcqCard).driveFileId === 'string'
 }
 
@@ -55,7 +57,7 @@ export async function DELETE(
       const stillInUse = new Set<string>()
       for (const other of otherRecords ?? []) {
         for (const card of other.cards ?? []) {
-          if (isSlidesCard(card)) {
+          if (hasDriveFiles(card)) {
             stillInUse.add(card.driveFileId)
             stillInUse.add(card.drivePreviewFileId)
           }
@@ -64,7 +66,7 @@ export async function DELETE(
 
       const { access_token } = await refreshAccessToken(connection.refresh_token)
       await Promise.all(
-        record.cards.filter(isSlidesCard).flatMap((card) => {
+        record.cards.filter(hasDriveFiles).flatMap((card) => {
           const tasks: Promise<void>[] = []
           if (!stillInUse.has(card.driveFileId)) {
             tasks.push(

@@ -71,6 +71,9 @@ export default async function Home({
               <Link href="/tools/image-mcq" className="rounded bg-blue-600 px-3 py-2 text-white">
                 圖片選擇題工具
               </Link>
+              <Link href="/tools/image-occlusion" className="rounded bg-blue-600 px-3 py-2 text-white">
+                Image Occlusion 工具
+              </Link>
             </>
           ) : (
             <a
