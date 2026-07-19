@@ -39,16 +39,43 @@ export async function DELETE(
 
   if (connection && record.cards?.length > 0) {
     try {
+      // 抽屜功能會讓好幾筆紀錄共用同一組 Drive 檔案 ID（沿用舊圖片、不重新上傳），
+      // 所以刪除前一定要先確認這個檔案有沒有被「其他」紀錄用著，還在用的話絕對不能刪。
+      const { data: otherRecords } = await supabase
+        .from('history_records')
+        .select('cards')
+        .eq('user_id', user.id)
+        .neq('id', id)
+        .returns<Pick<HistoryRecord, 'cards'>[]>()
+
+      const stillInUse = new Set<string>()
+      for (const other of otherRecords ?? []) {
+        for (const card of other.cards ?? []) {
+          if (card.driveFileId) stillInUse.add(card.driveFileId)
+          if (card.drivePreviewFileId) stillInUse.add(card.drivePreviewFileId)
+        }
+      }
+
       const { access_token } = await refreshAccessToken(connection.refresh_token)
       await Promise.all(
-        record.cards.flatMap((card) => [
-          deleteFile(access_token, card.driveFileId).catch((e) =>
-            console.error('[history delete] 刪除原始圖失敗', e)
-          ),
-          deleteFile(access_token, card.drivePreviewFileId).catch((e) =>
-            console.error('[history delete] 刪除縮圖失敗', e)
-          ),
-        ])
+        record.cards.flatMap((card) => {
+          const tasks: Promise<void>[] = []
+          if (!stillInUse.has(card.driveFileId)) {
+            tasks.push(
+              deleteFile(access_token, card.driveFileId).catch((e) =>
+                console.error('[history delete] 刪除原始圖失敗', e)
+              )
+            )
+          }
+          if (!stillInUse.has(card.drivePreviewFileId)) {
+            tasks.push(
+              deleteFile(access_token, card.drivePreviewFileId).catch((e) =>
+                console.error('[history delete] 刪除縮圖失敗', e)
+              )
+            )
+          }
+          return tasks
+        })
       )
     } catch (error) {
       console.error('[history delete] 刪除 Drive 檔案時發生錯誤，繼續刪除資料庫紀錄', error)
