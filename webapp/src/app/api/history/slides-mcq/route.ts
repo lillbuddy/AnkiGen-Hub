@@ -35,11 +35,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '尚未登入' }, { status: 401 })
   }
 
-  const { data: connection } = await supabase
+  const { data: connection, error: connectionError } = await supabase
     .from('google_drive_connections')
     .select('refresh_token, folder_id')
     .eq('user_id', user.id)
     .maybeSingle()
+
+  if (connectionError) {
+    console.error('[history slides-mcq] 查詢 google_drive_connections 失敗', connectionError)
+    return NextResponse.json(
+      { error: `查詢 Google Drive 連結狀態失敗：${connectionError.message}` },
+      { status: 500 }
+    )
+  }
 
   if (!connection) {
     return NextResponse.json({ error: '尚未連結 Google Drive' }, { status: 400 })
