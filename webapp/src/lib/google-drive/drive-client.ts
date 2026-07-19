@@ -87,6 +87,18 @@ export async function createTestImage(accessToken: string) {
   return uploadFile(accessToken, `ankigen-test-image-${Date.now()}.png`, 'image/png', bytes)
 }
 
+// 刪除失敗（例如檔案已經被使用者自己在 Drive 手動刪掉）不視為致命錯誤，呼叫端自行決定要不要理會。
+export async function deleteFile(accessToken: string, fileId: string) {
+  const response = await fetch(`${DRIVE_FILES_URL}/${fileId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`刪除檔案失敗（${response.status}）：${await response.text()}`)
+  }
+}
+
 // drive.file scope 底下，這個 API 只會列出「這個 App 建立過或使用者透過選擇器授權過」的檔案。
 export async function listAppFiles(accessToken: string) {
   const params = new URLSearchParams({

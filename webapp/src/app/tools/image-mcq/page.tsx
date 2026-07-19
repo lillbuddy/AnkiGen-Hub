@@ -1,13 +1,20 @@
 'use client'
 
-import { useState, type ChangeEvent } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import { createPreviewBlob } from '@/lib/create-preview-blob'
+import { clearDrawer, getDrawerCards } from '@/lib/drawer-storage'
 
+// 'new'：新選的圖片，還沒上傳，存 File + 縮圖 Blob，稍後要整個上傳。
+// 'reused'：從抽屜沿用的舊卡片，圖片已經在 Drive 上了，直接沿用既有的 driveFileId，不用重新上傳。
 interface CardState {
   localId: string
-  file: File
-  previewBlob: Blob
+  kind: 'new' | 'reused'
+  file?: File
+  previewBlob?: Blob
+  driveFileId?: string
+  drivePreviewFileId?: string
   previewObjectUrl: string
+  filename: string
   questionText: string
   optionA: string
   optionB: string
@@ -20,12 +27,14 @@ interface CardState {
   notes: string
 }
 
-function makeEmptyCard(file: File, previewBlob: Blob): CardState {
+function makeNewCard(file: File, previewBlob: Blob): CardState {
   return {
     localId: crypto.randomUUID(),
+    kind: 'new',
     file,
     previewBlob,
     previewObjectUrl: URL.createObjectURL(previewBlob),
+    filename: file.name,
     questionText: '',
     optionA: '',
     optionB: '',
@@ -39,18 +48,51 @@ function makeEmptyCard(file: File, previewBlob: Blob): CardState {
   }
 }
 
+const OPTION_KEYS = ['optionA', 'optionB', 'optionC', 'optionD', 'optionE', 'optionF'] as const
+
 export default function ImageMcqPage() {
   const [cards, setCards] = useState<CardState[]>([])
   const [purpose, setPurpose] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
+  const [fromDrawer, setFromDrawer] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('from') !== 'drawer') return
+
+    // 同上：window.location 和抽屜的 localStorage 都只在瀏覽器端讀得到，故意等 mount 後才讀。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFromDrawer(true)
+    const drawerCards = getDrawerCards()
+    setCards(
+      drawerCards.map((c) => ({
+        localId: crypto.randomUUID(),
+        kind: 'reused',
+        driveFileId: c.driveFileId,
+        drivePreviewFileId: c.drivePreviewFileId,
+        previewObjectUrl: `/api/google-drive/image/${c.drivePreviewFileId}`,
+        filename: c.filename,
+        questionText: c.questionText,
+        optionA: c.optionA,
+        optionB: c.optionB,
+        optionC: c.optionC,
+        optionD: c.optionD,
+        optionE: c.optionE,
+        optionF: c.optionF,
+        answer: c.answer,
+        isMultiple: c.isMultiple,
+        notes: c.notes,
+      }))
+    )
+  }, [])
 
   async function handleFilesSelected(e: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
     e.target.value = '' // 讓使用者可以重複選同一個檔案
 
     const newCards = await Promise.all(
-      files.map(async (file) => makeEmptyCard(file, await createPreviewBlob(file)))
+      files.map(async (file) => makeNewCard(file, await createPreviewBlob(file)))
     )
     setCards((prev) => [...prev, ...newCards])
   }
@@ -84,7 +126,7 @@ export default function ImageMcqPage() {
         'meta',
         JSON.stringify(
           cards.map((c) => ({
-            filename: c.file.name,
+            filename: c.filename,
             questionText: c.questionText,
             optionA: c.optionA,
             optionB: c.optionB,
@@ -95,12 +137,18 @@ export default function ImageMcqPage() {
             answer: c.answer,
             isMultiple: c.isMultiple,
             notes: c.notes,
+            // 沿用的卡片直接帶舊的 Drive 檔案 ID，伺服器端看到這兩個值就不會再要求上傳檔案。
+            ...(c.kind === 'reused'
+              ? { driveFileId: c.driveFileId, drivePreviewFileId: c.drivePreviewFileId }
+              : {}),
           }))
         )
       )
       cards.forEach((c, i) => {
-        formData.append(`original_${i}`, c.file, c.file.name)
-        formData.append(`preview_${i}`, c.previewBlob, 'preview.jpg')
+        if (c.kind === 'new' && c.file && c.previewBlob) {
+          formData.append(`original_${i}`, c.file, c.file.name)
+          formData.append(`preview_${i}`, c.previewBlob, 'preview.jpg')
+        }
       })
 
       const response = await fetch('/api/history/slides-mcq', {
@@ -114,9 +162,12 @@ export default function ImageMcqPage() {
         return
       }
 
+      if (fromDrawer) clearDrawer()
+
       setMessage({ type: 'ok', text: '已成功存入歷史紀錄！' })
       setCards([])
       setPurpose('')
+      setFromDrawer(false)
     } catch (error) {
       setMessage({
         type: 'error',
@@ -129,21 +180,28 @@ export default function ImageMcqPage() {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <h1 className="mb-4 text-xl font-semibold">圖片選擇題工具（最簡版）</h1>
+      <h1 className="mb-1 text-xl font-semibold">圖片選擇題工具（最簡版）</h1>
+      {fromDrawer && (
+        <p className="mb-3 text-sm text-gray-500">
+          已經從抽屜載入 {cards.length} 張卡片，可以直接修改，也可以再選新的圖片一起加進來。
+        </p>
+      )}
 
       <input type="file" accept="image/*" multiple onChange={handleFilesSelected} className="mb-4" />
 
       <div className="flex flex-col gap-4">
         {cards.map((card, index) => (
           <div key={card.localId} className="flex gap-4 rounded border border-gray-300 p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={card.previewObjectUrl}
-              alt={card.file.name}
+              alt={card.filename}
               className="h-24 w-24 flex-shrink-0 rounded object-cover"
             />
             <div className="flex flex-1 flex-col gap-2">
               <div className="text-xs text-gray-500">
-                第 {index + 1} 張：{card.file.name}
+                第 {index + 1} 張：{card.filename}
+                {card.kind === 'reused' && '（沿用舊圖片）'}
               </div>
               <input
                 placeholder="題目"
@@ -152,17 +210,15 @@ export default function ImageMcqPage() {
                 className="rounded border border-gray-300 px-2 py-1 text-sm"
               />
               <div className="grid grid-cols-3 gap-1">
-                {(['optionA', 'optionB', 'optionC', 'optionD', 'optionE', 'optionF'] as const).map(
-                  (key, i) => (
-                    <input
-                      key={key}
-                      placeholder={`選項 ${String.fromCharCode(65 + i)}`}
-                      value={card[key]}
-                      onChange={(e) => updateCard(card.localId, { [key]: e.target.value })}
-                      className="rounded border border-gray-300 px-2 py-1 text-sm"
-                    />
-                  )
-                )}
+                {OPTION_KEYS.map((key, i) => (
+                  <input
+                    key={key}
+                    placeholder={`選項 ${String.fromCharCode(65 + i)}`}
+                    value={card[key]}
+                    onChange={(e) => updateCard(card.localId, { [key]: e.target.value })}
+                    className="rounded border border-gray-300 px-2 py-1 text-sm"
+                  />
+                ))}
               </div>
               <div className="flex items-center gap-3">
                 <input

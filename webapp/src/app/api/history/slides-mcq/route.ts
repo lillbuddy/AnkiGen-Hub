@@ -16,6 +16,10 @@ interface CardMeta {
   answer: string
   isMultiple: boolean
   notes: string
+  // 這兩個欄位有值的話，代表是從抽屜沿用的舊卡片，圖片已經在 Drive 上了，
+  // 不用再上傳，直接沿用這兩個 ID。
+  driveFileId?: string
+  drivePreviewFileId?: string
 }
 
 function getExtension(filename: string) {
@@ -83,6 +87,25 @@ export async function POST(request: Request) {
 
     const cards = await Promise.all(
       metaList.map(async (meta, i) => {
+        // 從抽屜沿用的舊卡片：圖片已經在 Drive 上了，直接沿用既有的 ID，不用重新上傳。
+        if (meta.driveFileId && meta.drivePreviewFileId) {
+          return {
+            filename: meta.filename,
+            driveFileId: meta.driveFileId,
+            drivePreviewFileId: meta.drivePreviewFileId,
+            questionText: meta.questionText,
+            optionA: meta.optionA,
+            optionB: meta.optionB,
+            optionC: meta.optionC,
+            optionD: meta.optionD,
+            optionE: meta.optionE,
+            optionF: meta.optionF,
+            answer: meta.answer,
+            isMultiple: meta.isMultiple,
+            notes: meta.notes,
+          }
+        }
+
         const original = formData.get(`original_${i}`)
         const preview = formData.get(`preview_${i}`)
 
