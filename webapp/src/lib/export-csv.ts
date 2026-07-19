@@ -1,6 +1,7 @@
 // 產生 Anki 可以匯入的 CSV（逗號分隔、每欄都加引號），純前端組字串，
 // 不需要額外打伺服器 API——歷史紀錄頁面本來就已經有完整的卡片資料。
-import type { SlidesMcqCard } from '@/lib/history-types'
+import type { McqCard, SlidesMcqCard } from '@/lib/history-types'
+import { convertMathDelimiters } from '@/lib/convert-math-delimiters'
 
 function escapeCsvField(value: string | number | boolean | null | undefined): string {
   const str = String(value ?? '')
@@ -9,6 +10,26 @@ function escapeCsvField(value: string | number | boolean | null | undefined): st
 
 function csvRow(fields: (string | number | boolean | null | undefined)[]): string {
   return fields.map(escapeCsvField).join(',') + '\n'
+}
+
+// 純文字選擇題（沒有圖片）：[題目, 選項A~F, 答案, 是否多選, 備註]，題目和備註要先轉換數學公式分隔符號。
+export function buildMcqCsv(cards: McqCard[]): string {
+  return cards
+    .map((card) =>
+      csvRow([
+        convertMathDelimiters(card.questionText),
+        card.optionA,
+        card.optionB,
+        card.optionC,
+        card.optionD,
+        card.optionE,
+        card.optionF,
+        card.answer,
+        card.isMultiple ? '1' : '',
+        convertMathDelimiters(card.notes),
+      ])
+    )
+    .join('')
 }
 
 // 圖片選擇題：[題目(含<img>), 選項A~F, 答案, 是否多選, 備註]

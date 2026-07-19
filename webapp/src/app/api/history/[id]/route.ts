@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { refreshAccessToken } from '@/lib/google-drive/oauth'
 import { deleteFile } from '@/lib/google-drive/drive-client'
-import type { HistoryRecord } from '@/lib/history-types'
+import type { HistoryRecord, SlidesMcqCard } from '@/lib/history-types'
+
+function isSlidesCard(card: HistoryRecord['cards'][number]): card is SlidesMcqCard {
+  return typeof (card as SlidesMcqCard).driveFileId === 'string'
+}
 
 // 刪除一筆歷史紀錄：連同 Drive 上對應的原始圖+縮圖一起刪除（best-effort，
 // Drive 那邊刪除失敗不擋住資料庫這筆紀錄被刪除）。
@@ -51,14 +55,16 @@ export async function DELETE(
       const stillInUse = new Set<string>()
       for (const other of otherRecords ?? []) {
         for (const card of other.cards ?? []) {
-          if (card.driveFileId) stillInUse.add(card.driveFileId)
-          if (card.drivePreviewFileId) stillInUse.add(card.drivePreviewFileId)
+          if (isSlidesCard(card)) {
+            stillInUse.add(card.driveFileId)
+            stillInUse.add(card.drivePreviewFileId)
+          }
         }
       }
 
       const { access_token } = await refreshAccessToken(connection.refresh_token)
       await Promise.all(
-        record.cards.flatMap((card) => {
+        record.cards.filter(isSlidesCard).flatMap((card) => {
           const tasks: Promise<void>[] = []
           if (!stillInUse.has(card.driveFileId)) {
             tasks.push(

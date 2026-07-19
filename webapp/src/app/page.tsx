@@ -50,6 +50,13 @@ export default async function Home({
             </p>
           )}
 
+          <Link href="/tools/mcq" className="rounded bg-blue-600 px-3 py-2 text-white">
+            文字選擇題產生器
+          </Link>
+          <Link href="/history" className="text-sm text-blue-600 underline">
+            歷史紀錄
+          </Link>
+
           {driveConnected ? (
             <>
               <p className="text-sm text-gray-600">已連結 Google Drive</p>
@@ -63,9 +70,6 @@ export default async function Home({
               </a>
               <Link href="/tools/image-mcq" className="rounded bg-blue-600 px-3 py-2 text-white">
                 圖片選擇題工具
-              </Link>
-              <Link href="/history" className="text-sm text-blue-600 underline">
-                歷史紀錄
               </Link>
             </>
           ) : (

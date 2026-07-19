@@ -1,9 +1,6 @@
-// 共用型別：history_records 資料表的卡片內容（目前只有 slides-mcq 這種有圖片的選擇題卡片
-// 有完整欄位；之後如果要支援 Image Occlusion 或純文字卡片，可以在這裡擴充）。
-export interface SlidesMcqCard {
-  filename: string
-  driveFileId: string
-  drivePreviewFileId: string
+// 共用型別：history_records 資料表的卡片內容。
+// McqCard：純文字選擇題（source = 'mcq'），沒有圖片。
+export interface McqCard {
   questionText: string
   optionA: string
   optionB: string
@@ -16,12 +13,19 @@ export interface SlidesMcqCard {
   notes: string
 }
 
+// SlidesMcqCard：圖片選擇題（source = 'slides-mcq'），比 McqCard 多兩個 Drive 檔案 ID。
+export interface SlidesMcqCard extends McqCard {
+  filename: string
+  driveFileId: string
+  drivePreviewFileId: string
+}
+
 export interface HistoryRecord {
   id: string
   source: string
   purpose: string | null
   card_count: number
-  cards: SlidesMcqCard[]
+  cards: (McqCard | SlidesMcqCard)[]
   created_at: string
 }
 

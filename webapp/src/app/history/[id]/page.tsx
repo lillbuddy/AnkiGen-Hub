@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { SOURCE_LABELS, type HistoryRecord } from '@/lib/history-types'
+import { SOURCE_LABELS, type HistoryRecord, type SlidesMcqCard } from '@/lib/history-types'
 import HistoryCardItem from './history-card-item'
+import McqCardItem from './mcq-card-item'
 import DownloadCsvButton from '../download-csv-button'
 
 function formatDate(isoString: string) {
@@ -66,9 +67,11 @@ export default async function HistoryDetailPage({
       </div>
 
       <div className="flex flex-col gap-3">
-        {record.cards.map((card, index) => (
-          <HistoryCardItem key={index} card={card} recordId={record.id} cardIndex={index} />
-        ))}
+        {record.source === 'mcq'
+          ? record.cards.map((card, index) => <McqCardItem key={index} card={card} />)
+          : (record.cards as SlidesMcqCard[]).map((card, index) => (
+              <HistoryCardItem key={index} card={card} recordId={record.id} cardIndex={index} />
+            ))}
       </div>
     </main>
   )
