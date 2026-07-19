@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Script from 'next/script'
 import { buildMcqCsv, downloadCsv } from '@/lib/export-csv'
+import { callGeminiJson } from '@/lib/gemini-client'
 import type { McqCard } from '@/lib/history-types'
 import AnkiSimulator from './anki-simulator'
 import AnkiTemplatePanel from './anki-template-panel'
@@ -49,29 +50,9 @@ ${sourceText}
 """`
 
 async function callGemini(apiKey: string, model: string, sourceText: string): Promise<McqCard[]> {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: PROMPT_TEMPLATE(sourceText) }] }],
-        generationConfig: { responseMimeType: 'application/json' },
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    throw new Error(`Gemini API 呼叫失敗（${response.status}）：${await response.text()}`)
-  }
-
-  const data = await response.json()
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!text) throw new Error('Gemini 沒有回傳內容')
-
-  const parsed = JSON.parse(text)
+  const parsed = await callGeminiJson(apiKey, model, PROMPT_TEMPLATE(sourceText))
   if (!Array.isArray(parsed)) throw new Error('Gemini 回傳的格式不是陣列')
-  return parsed
+  return parsed as McqCard[]
 }
 
 function makeCardState(card: Partial<McqCard> = {}): CardState {

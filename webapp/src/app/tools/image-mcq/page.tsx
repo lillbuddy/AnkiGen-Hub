@@ -3,6 +3,12 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
 import { createPreviewBlob } from '@/lib/create-preview-blob'
 import { clearDrawer, getDrawerCards } from '@/lib/drawer-storage'
+import { callGeminiJson } from '@/lib/gemini-client'
+import { buildDistractorPrompt, getGlossaryPoolExcluding, parseGlossaryMarkdown } from '@/lib/glossary'
+
+// 干擾選項只鎖定 B/C/D 這三個「標準四選一」的欄位，且只補目前空白的，已經有內容的不會被覆蓋。
+// 這個功能假設選項 A 放的就是正確答案（沿用舊版的既有慣例）。
+const DISTRACTOR_TARGET_FIELDS = ['optionB', 'optionC', 'optionD'] as const
 
 // 'new'：新選的圖片，還沒上傳，存 File + 縮圖 Blob，稍後要整個上傳。
 // 'reused'：從抽屜沿用的舊卡片，圖片已經在 Drive 上了，直接沿用既有的 driveFileId，不用重新上傳。
@@ -56,6 +62,11 @@ export default function ImageMcqPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
   const [fromDrawer, setFromDrawer] = useState(false)
+  const [apiKey, setApiKey] = useState('')
+  const [model, setModel] = useState('gemini-3.5-flash')
+  const [glossary, setGlossary] = useState<string[]>([])
+  const [glossaryStatus, setGlossaryStatus] = useState('')
+  const [generatingFor, setGeneratingFor] = useState<string | null>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -103,6 +114,69 @@ export default function ImageMcqPage() {
 
   function removeCard(localId: string) {
     setCards((prev) => prev.filter((c) => c.localId !== localId))
+  }
+
+  async function handleGlossaryFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // 允許重複選取同一個檔案
+    if (!file) return
+
+    try {
+      const text = await file.text()
+      const terms = parseGlossaryMarkdown(text)
+      setGlossary(terms)
+      setGlossaryStatus(
+        terms.length > 0
+          ? `已載入 ${terms.length} 個詞彙（${file.name}）`
+          : `「${file.name}」裡沒有解析到任何詞彙，請確認格式（一行一個詞彙，或用逗號、頓號分隔）`
+      )
+    } catch {
+      setGlossaryStatus('讀取檔案失敗，請確認檔案格式是否正確。')
+    }
+  }
+
+  async function handleGenerateDistractors(localId: string) {
+    const card = cards.find((c) => c.localId === localId)
+    if (!card) return
+
+    if (!apiKey.trim()) {
+      setMessage({ type: 'error', text: '請先輸入 Gemini API Key' })
+      return
+    }
+    if (!card.optionA.trim()) {
+      setMessage({ type: 'error', text: '請先在選項 A 填入正確答案，AI 才知道要根據什麼產生干擾選項' })
+      return
+    }
+    const emptyFields = DISTRACTOR_TARGET_FIELDS.filter((field) => !card[field].trim())
+    if (emptyFields.length === 0) {
+      setMessage({
+        type: 'error',
+        text: '選項 B、C、D 都已經有內容了。如果想讓 AI 重新產生，請先清空想要覆蓋的欄位',
+      })
+      return
+    }
+
+    setGeneratingFor(localId)
+    setMessage(null)
+    try {
+      const pool = getGlossaryPoolExcluding(glossary, card.optionA)
+      const prompt = buildDistractorPrompt(card.questionText, card.optionA, emptyFields.length, pool)
+      const distractors = await callGeminiJson(apiKey.trim(), model, prompt)
+      if (!Array.isArray(distractors)) throw new Error('Gemini 回傳的格式不是陣列')
+
+      const patch: Partial<CardState> = {}
+      emptyFields.forEach((field, idx) => {
+        if (distractors[idx]) patch[field] = String(distractors[idx]).trim()
+      })
+      updateCard(localId, patch)
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: `AI 產生干擾選項失敗：${error instanceof Error ? error.message : String(error)}`,
+      })
+    } finally {
+      setGeneratingFor(null)
+    }
   }
 
   async function handleSave() {
@@ -187,6 +261,34 @@ export default function ImageMcqPage() {
         </p>
       )}
 
+      <div className="mb-4 flex flex-col gap-2 rounded border border-gray-300 p-3">
+        <div className="flex gap-2">
+          <input
+            type="password"
+            placeholder="Gemini API Key（AI 產生干擾選項用）"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+          />
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          >
+            <option value="gemini-3.5-flash">gemini-3.5-flash（推薦）</option>
+            <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite（極速）</option>
+            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview（深度解析）</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="rounded border border-gray-300 px-2 py-1 text-sm">
+            上傳詞彙表 (.md)
+            <input type="file" accept=".md,text/markdown" onChange={handleGlossaryFile} className="hidden" />
+          </label>
+          {glossaryStatus && <span className="text-xs text-gray-500">{glossaryStatus}</span>}
+        </div>
+      </div>
+
       <input type="file" accept="image/*" multiple onChange={handleFilesSelected} className="mb-4" />
 
       <div className="flex flex-col gap-4">
@@ -242,12 +344,21 @@ export default function ImageMcqPage() {
                 onChange={(e) => updateCard(card.localId, { notes: e.target.value })}
                 className="rounded border border-gray-300 px-2 py-1 text-sm"
               />
-              <button
-                onClick={() => removeCard(card.localId)}
-                className="self-start text-xs text-red-600 underline"
-              >
-                移除這張卡片
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleGenerateDistractors(card.localId)}
+                  disabled={generatingFor === card.localId}
+                  className="text-xs text-blue-600 underline disabled:opacity-50"
+                >
+                  {generatingFor === card.localId ? '產生中...' : 'AI 產生干擾選項（B/C/D）'}
+                </button>
+                <button
+                  onClick={() => removeCard(card.localId)}
+                  className="text-xs text-red-600 underline"
+                >
+                  移除這張卡片
+                </button>
+              </div>
             </div>
           </div>
         ))}
