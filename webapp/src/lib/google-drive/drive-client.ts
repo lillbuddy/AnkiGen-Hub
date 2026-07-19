@@ -12,20 +12,23 @@ interface DriveFile {
 }
 
 // 建一個空檔案的 metadata，再把內容 PATCH 進去——比手刻 multipart 請求簡單。
-export async function createTestFile(accessToken: string, content: string) {
+async function uploadFile(
+  accessToken: string,
+  name: string,
+  contentType: string,
+  body: BodyInit
+) {
   const createResponse = await fetch(DRIVE_FILES_URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      name: `ankigen-test-${Date.now()}.txt`,
-    }),
+    body: JSON.stringify({ name }),
   })
 
   if (!createResponse.ok) {
-    throw new Error(`建立測試檔案失敗（${createResponse.status}）：${await createResponse.text()}`)
+    throw new Error(`建立檔案失敗（${createResponse.status}）：${await createResponse.text()}`)
   }
 
   const created = (await createResponse.json()) as DriveFile
@@ -34,13 +37,13 @@ export async function createTestFile(accessToken: string, content: string) {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'text/plain',
+      'Content-Type': contentType,
     },
-    body: content,
+    body,
   })
 
   if (!uploadResponse.ok) {
-    throw new Error(`上傳測試檔案內容失敗（${uploadResponse.status}）：${await uploadResponse.text()}`)
+    throw new Error(`上傳檔案內容失敗（${uploadResponse.status}）：${await uploadResponse.text()}`)
   }
 
   const detailResponse = await fetch(
@@ -49,6 +52,19 @@ export async function createTestFile(accessToken: string, content: string) {
   )
 
   return (await detailResponse.json()) as DriveFile
+}
+
+export async function createTestFile(accessToken: string, content: string) {
+  return uploadFile(accessToken, `ankigen-test-${Date.now()}.txt`, 'text/plain', content)
+}
+
+// 一張 1x1 的紅色 PNG（寫死的最小合法 PNG 二進位內容），純粹用來驗證圖片上傳/顯示流程。
+const TEST_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+
+export async function createTestImage(accessToken: string) {
+  const bytes = Buffer.from(TEST_PNG_BASE64, 'base64')
+  return uploadFile(accessToken, `ankigen-test-image-${Date.now()}.png`, 'image/png', bytes)
 }
 
 // drive.file scope 底下，這個 API 只會列出「這個 App 建立過或使用者透過選擇器授權過」的檔案。
