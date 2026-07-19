@@ -19,6 +19,12 @@ export async function GET(request: NextRequest) {
 
   const expectedState = request.cookies.get(STATE_COOKIE)?.value
   if (!code || !state || !expectedState || state !== expectedState) {
+    console.error('[google-drive callback] state 驗證失敗', {
+      hasCode: !!code,
+      hasStateParam: !!state,
+      hasExpectedStateCookie: !!expectedState,
+      stateMatches: !!state && !!expectedState && state === expectedState,
+    })
     homeUrl.searchParams.set('drive_error', 'invalid_state')
     return NextResponse.redirect(homeUrl)
   }

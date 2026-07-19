@@ -20,7 +20,9 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(buildGoogleAuthUrl(redirectUri, state))
   response.cookies.set(STATE_COOKIE, state, {
     httpOnly: true,
-    secure: true,
+    // Secure cookie 在非 HTTPS（例如本機 http://localhost）下瀏覽器不會存也不會送出，
+    // 所以要跟著目前請求實際的協定走，不能寫死 true，否則本機測試 state 永遠對不起來。
+    secure: request.nextUrl.protocol === 'https:',
     sameSite: 'lax',
     maxAge: 60 * 10, // 10 分鐘內要完成授權
     path: '/',
