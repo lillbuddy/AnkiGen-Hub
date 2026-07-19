@@ -1,20 +1,27 @@
-// 把常見的數學公式寫法統一轉成 Anki 看得懂的 MathJax 分隔符號：
-// 行內 [$]...[/$]，展示用（獨立一行的大公式）[$$]...[/$$]。
-//
-// 一定要用「一次 replace、一個合併的 regex」處理完全部四種寫法，不能分成好幾次
-// 依序 .replace()——因為轉換後的 [$$]/[/$$] 本身含有 $ 字元，如果後面還有一次
-// 針對單一 $ 的 replace，會把前一步驟轉換出來的結果誤判成新的數學公式，越轉越亂。
+// 把各種常見的數學公式寫法統一轉換成 MathJax 原生可辨識的 \(...\) \[...\] 格式
+// （這是舊版 app.js 驗證過能在真正 Anki 裡正確渲染的格式，Anki 內建的 MathJax
+// 就是設定成辨認 \( \) 和 \[ \] 這兩種分隔符號，不是 [$][/$] 這種寫法）。
+// 支援輸入：Anki 專屬的 [$]...[/$] [$$]...[/$$]，以及一般 Markdown 常見的 $...$ $$...$$。
 export function convertMathDelimiters(text: string): string {
-  if (!text) return text
+  if (!text) return ''
+  let out = String(text)
 
-  return text.replace(
-    /\\\[([\s\S]+?)\\\]|\$\$([\s\S]+?)\$\$|\\\(([\s\S]+?)\\\)|\$([^$\n]+?)\$/g,
-    (match, display1, display2, inline1, inline2) => {
-      if (display1 !== undefined) return `[$$]${display1}[/$$]`
-      if (display2 !== undefined) return `[$$]${display2}[/$$]`
-      if (inline1 !== undefined) return `[$]${inline1}[/$]`
-      if (inline2 !== undefined) return `[$]${inline2}[/$]`
-      return match
-    }
+  // Anki 專屬語法 -> 標準 MathJax 分隔符號
+  out = out
+    .replace(/\[\$\$\]/g, '\\[')
+    .replace(/\[\/\$\$\]/g, '\\]')
+    .replace(/\[\$\]/g, '\\(')
+    .replace(/\[\/\$\]/g, '\\)')
+
+  // 區塊公式 $$...$$ -> \[...\]（需在行內公式判斷之前處理，避免誤判）
+  out = out.replace(/\$\$([\s\S]+?)\$\$/g, (_m, inner) => `\\[${inner}\\]`)
+
+  // 行內公式 $...$ -> \(...\)，避免誤判金額（如 $100、$5 - $10）：
+  // 開頭 $ 前面不可緊接數字或另一個 $；公式內容頭尾不可為空白；結尾 $ 後面不可緊接數字
+  out = out.replace(
+    /(^|[^$\d])\$([^\s$](?:[^$\n]*[^\s$])?)\$(?!\d)/g,
+    (_m, pre, inner) => `${pre}\\(${inner}\\)`
   )
+
+  return out
 }

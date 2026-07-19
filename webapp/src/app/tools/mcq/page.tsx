@@ -1,14 +1,32 @@
 'use client'
 
 import { useState } from 'react'
+import Script from 'next/script'
 import { buildMcqCsv, downloadCsv } from '@/lib/export-csv'
 import type { McqCard } from '@/lib/history-types'
+import AnkiSimulator from './anki-simulator'
+import AnkiTemplatePanel from './anki-template-panel'
 
 interface CardState extends McqCard {
   localId: string
 }
 
 const OPTION_KEYS = ['optionA', 'optionB', 'optionC', 'optionD', 'optionE', 'optionF'] as const
+
+// 使用者還沒解析出任何卡片時，模擬器先顯示一張範例卡片，讓人一眼看懂這個功能在做什麼。
+const SAMPLE_PREVIEW_CARD: McqCard = {
+  questionText: '關於心肌梗塞，下列哪項血中心肌酵素最快上升？',
+  optionA: 'Myoglobin（肌紅蛋白）',
+  optionB: 'Troponin I（心肌肌鈣蛋白 I）',
+  optionC: 'CK-MB（肌酸激酶同工酶 MB）',
+  optionD: 'LDH（乳酸脫氫酶）',
+  optionE: '',
+  optionF: '',
+  answer: 'A',
+  isMultiple: false,
+  notes:
+    'Myoglobin 在心肌受損後 1-3 小時內最快釋放到血中，但因為它也存在於骨骼肌，特異性較低。Troponin I 則在 3-4 小時後上升，但特異性極高。',
+}
 
 const PROMPT_TEMPLATE = (sourceText: string) => `你是一個幫忙把文字內容轉換成 Anki 選擇題卡片的助手。請閱讀以下文字內容，盡量抽取或改寫成多張選擇題，用 JSON 陣列格式回傳，不要有其他文字或說明。
 
@@ -81,6 +99,7 @@ export default function McqToolPage() {
   const [parsing, setParsing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
+  const [previewIndex, setPreviewIndex] = useState(0)
 
   async function handleParse() {
     if (!apiKey.trim()) {
@@ -247,12 +266,20 @@ export default function McqToolPage() {
               onChange={(e) => updateCard(card.localId, { notes: e.target.value })}
               className="mb-2 w-full rounded border border-gray-300 px-2 py-1 text-sm"
             />
-            <button
-              onClick={() => removeCard(card.localId)}
-              className="text-xs text-red-600 underline"
-            >
-              移除這張卡片
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPreviewIndex(index)}
+                className="text-xs text-blue-600 underline"
+              >
+                在下方模擬器預覽這張
+              </button>
+              <button
+                onClick={() => removeCard(card.localId)}
+                className="text-xs text-red-600 underline"
+              >
+                移除這張卡片
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -288,6 +315,41 @@ export default function McqToolPage() {
           {message.text}
         </p>
       )}
+
+      <div className="mt-8">
+        <h2 className="mb-3 text-lg font-semibold">Anki 效果即時模擬器</h2>
+        <AnkiSimulator
+          key={cards[Math.min(previewIndex, cards.length - 1)]?.localId ?? 'sample'}
+          card={cards[Math.min(previewIndex, cards.length - 1)] ?? SAMPLE_PREVIEW_CARD}
+        />
+      </div>
+
+      <div className="mt-6">
+        <h2 className="mb-3 text-lg font-semibold">Anki 萬用選擇題模板程式碼</h2>
+        <AnkiTemplatePanel />
+      </div>
+
+      {/* 讓模擬器能比照 Anki 內部渲染數學公式，而不是顯示未渲染的原始語法。
+          beforeInteractive 只能放在根 layout，這裡改用 afterInteractive——
+          同一個 strategy 底下 Script 會依照放置順序依序執行，所以 config 還是會在
+          MathJax 主程式庫載入之前先跑。 */}
+      <Script id="mathjax-config" strategy="afterInteractive">
+        {`window.MathJax = {
+          tex: {
+            inlineMath: [['\\\\(', '\\\\)']],
+            displayMath: [['\\\\[', '\\\\]']],
+            processEscapes: true
+          },
+          options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+          }
+        };`}
+      </Script>
+      <Script
+        id="mathjax-script"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.js"
+        strategy="afterInteractive"
+      />
     </main>
   )
 }

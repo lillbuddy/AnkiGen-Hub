@@ -1,0 +1,252 @@
+/* Anki 卡片模擬器樣式，顏色數值先直接寫死（沿用舊版 style.css 那組藍色系配色），
+   等之後做整體視覺風格那一步再改成共用的設計變數。 */
+
+.anki-card-container {
+  width: 100%;
+  max-width: 420px;
+  height: 480px;
+  perspective: 1200px;
+  cursor: pointer;
+  margin: 0 auto;
+}
+
+.anki-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.anki-card-container.flipped .anki-card-inner {
+  transform: rotateY(180deg);
+}
+
+.anki-card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  border: 1px solid #e2e8f0;
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+.anki-card-front {
+  background: linear-gradient(145deg, #ffffff 0%, #f4f8fd 100%);
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.anki-card-back {
+  background: linear-gradient(145deg, #f4f8fd 0%, #ffffff 100%);
+  transform: rotateY(180deg);
+  z-index: 1;
+}
+
+.anki-card-container.flipped .anki-card-front {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.anki-card-container.flipped .anki-card-back {
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.sim-badge-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.sim-card-type-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background-color: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+  color: #0ea5e9;
+}
+
+.sim-card-type-badge.multiple {
+  background-color: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+.sim-card-tag {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.sim-question {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.sim-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-grow: 1;
+}
+
+.sim-option-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  font-size: 14px;
+  text-align: left;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.sim-option-prefix {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  font-weight: 700;
+  margin-right: 12px;
+  flex-shrink: 0;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.anki-card-front .sim-option-btn:hover {
+  background-color: #eef4fb;
+  border-color: #c7d2e0;
+}
+
+.anki-card-front .sim-option-btn.selected {
+  background-color: rgba(14, 165, 233, 0.12);
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+}
+
+.anki-card-front .sim-option-btn.selected .sim-option-prefix {
+  background-color: #0ea5e9;
+  border-color: #0ea5e9;
+  color: #fff;
+}
+
+.anki-card-back .sim-option-btn {
+  cursor: default;
+}
+
+.anki-card-back .sim-option-btn.correct {
+  background-color: rgba(22, 163, 74, 0.1);
+  border-color: #16a34a;
+  font-weight: 500;
+}
+
+.anki-card-back .sim-option-btn.correct .sim-option-prefix {
+  background-color: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+
+.anki-card-back .sim-option-btn.wrong {
+  background-color: rgba(220, 38, 38, 0.08);
+  border-color: #dc2626;
+  opacity: 0.6;
+}
+
+.anki-card-back .sim-option-btn.wrong .sim-option-prefix {
+  background-color: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+.anki-card-back .sim-option-btn.unselected {
+  opacity: 0.5;
+}
+
+.sim-tip {
+  text-align: center;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 15px;
+}
+
+.sim-divider {
+  border: 0;
+  height: 1px;
+  background-color: #e2e8f0;
+  margin: 15px 0;
+}
+
+.sim-answer-box {
+  background-color: #f1f5f9;
+  border: 1px dashed #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.sim-correct-ans {
+  font-weight: bold;
+  color: #16a34a;
+}
+
+.sim-explanation {
+  background-color: #f1f5f9;
+  border-left: 3px solid #e2e8f0;
+  border-radius: 0 6px 6px 0;
+  padding: 12px;
+  text-align: left;
+}
+
+.sim-explanation-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.sim-explanation-content {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.sim-explanation.sim-exp-correct {
+  background-color: rgba(22, 163, 74, 0.12);
+  border-left-color: #16a34a;
+}
+
+.sim-explanation.sim-exp-correct .sim-explanation-title {
+  color: #15803d;
+}
+
+.sim-explanation.sim-exp-wrong {
+  background-color: rgba(220, 38, 38, 0.12);
+  border-left-color: #dc2626;
+}
+
+.sim-explanation.sim-exp-wrong .sim-explanation-title {
+  color: #b91c1c;
+}
