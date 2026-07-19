@@ -47,3 +47,24 @@ export async function exchangeCodeForTokens(code: string, redirectUri: string) {
 
   return (await response.json()) as GoogleTokenResponse
 }
+
+// 用存起來的 refresh_token 換一個新的短效 access_token（每次真的要呼叫 Drive API 前都要做這一步）。
+export async function refreshAccessToken(refreshToken: string) {
+  const response = await fetch(GOOGLE_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      refresh_token: refreshToken,
+      client_id: process.env.GOOGLE_CLIENT_ID!,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      grant_type: 'refresh_token',
+    }),
+  })
+
+  if (!response.ok) {
+    const body = await response.text()
+    throw new Error(`Google access_token 刷新失敗（${response.status}）：${body}`)
+  }
+
+  return (await response.json()) as GoogleTokenResponse
+}

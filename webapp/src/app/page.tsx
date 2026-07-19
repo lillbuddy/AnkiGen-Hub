@@ -51,7 +51,17 @@ export default async function Home({
           )}
 
           {driveConnected ? (
-            <p className="text-sm text-gray-600">已連結 Google Drive</p>
+            <>
+              <p className="text-sm text-gray-600">已連結 Google Drive</p>
+              <a
+                href="/api/google-drive/test"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 underline"
+              >
+                測試 Google Drive 讀寫
+              </a>
+            </>
           ) : (
             <a
               href="/api/google-drive/connect"
