@@ -12,7 +12,7 @@ interface DriveFile {
 }
 
 // 建一個空檔案的 metadata，再把內容 PATCH 進去——比手刻 multipart 請求簡單。
-async function uploadFile(
+export async function uploadFile(
   accessToken: string,
   name: string,
   contentType: string,
