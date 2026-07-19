@@ -63,8 +63,7 @@ export default function HistoryCardItem({
         <div className="mt-1 flex gap-3">
           <a
             href={`/api/google-drive/image/${card.driveFileId}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            download={card.filename}
             className="text-xs text-blue-600 underline"
           >
             下載原始圖片

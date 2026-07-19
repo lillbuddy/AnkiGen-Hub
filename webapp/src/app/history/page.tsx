@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { SOURCE_LABELS, type HistoryRecord } from '@/lib/history-types'
 import DeleteHistoryButton from './delete-history-button'
+import DownloadCsvButton from './download-csv-button'
 
 function formatDate(isoString: string) {
   const d = new Date(isoString)
@@ -69,6 +70,7 @@ export default async function HistoryPage() {
               >
                 查看
               </Link>
+              <DownloadCsvButton source={record.source} cards={record.cards} />
               <DeleteHistoryButton recordId={record.id} />
             </div>
           </div>

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { SOURCE_LABELS, type HistoryRecord } from '@/lib/history-types'
 import HistoryCardItem from './history-card-item'
+import DownloadCsvButton from '../download-csv-button'
 
 function formatDate(isoString: string) {
   const d = new Date(isoString)
@@ -52,9 +53,12 @@ export default async function HistoryDetailPage({
         <h1 className="text-xl font-semibold">
           {SOURCE_LABELS[record.source] ?? record.source}
         </h1>
-        <Link href="/history" className="text-sm text-blue-600 underline">
-          回歷史紀錄列表
-        </Link>
+        <div className="flex items-center gap-3">
+          <DownloadCsvButton source={record.source} cards={record.cards} />
+          <Link href="/history" className="text-sm text-blue-600 underline">
+            回歷史紀錄列表
+          </Link>
+        </div>
       </div>
       <div className="mb-4 text-sm text-gray-500">
         {formatDate(record.created_at)} ・ {record.purpose?.trim() || '（無備註）'} ・{' '}
