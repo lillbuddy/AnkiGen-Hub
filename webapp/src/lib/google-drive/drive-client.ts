@@ -58,9 +58,10 @@ export async function createTestFile(accessToken: string, content: string) {
   return uploadFile(accessToken, `ankigen-test-${Date.now()}.txt`, 'text/plain', content)
 }
 
-// 一張 1x1 的紅色 PNG（寫死的最小合法 PNG 二進位內容），純粹用來驗證圖片上傳/顯示流程。
+// 一張 1x1 的紅色 PNG（寫死的最小合法 PNG 二進位內容，親自產生並解碼驗證過確實是純紅色），
+// 純粹用來驗證圖片上傳/顯示流程。
 const TEST_PNG_BASE64 =
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR42mP4z8AAAAMBAQD3A0FDAAAAAElFTkSuQmCC'
 
 export async function createTestImage(accessToken: string) {
   const bytes = Buffer.from(TEST_PNG_BASE64, 'base64')
