@@ -48,7 +48,16 @@ export default function AnkiSimulator({ card }: { card: McqCard | null }) {
   }, [])
 
   if (!card) {
-    return <p className="text-sm text-text-secondary">目前沒有卡片可以預覽。</p>
+    return (
+      <div className="card-panel">
+        <div className="panel-header">
+          <h2>📱 Anki 效果即時模擬器</h2>
+        </div>
+        <div className="panel-body">
+          <p className="text-sm text-text-secondary">目前沒有卡片可以預覽。</p>
+        </div>
+      </div>
+    )
   }
 
   const options = OPTION_KEYS.map((key, i) => ({
@@ -72,7 +81,14 @@ export default function AnkiSimulator({ card }: { card: McqCard | null }) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="card-panel">
+      <div className="panel-header">
+        <h2>📱 Anki 效果即時模擬器</h2>
+        <button onClick={() => setFlipped((f) => !f)} className="btn btn-secondary btn-sm">
+          🔄 翻轉卡片（Space）
+        </button>
+      </div>
+      <div className="panel-body flex items-center justify-center py-6">
       <div
         className={`anki-card-container ${flipped ? 'flipped' : ''}`}
         onClick={() => setFlipped((f) => !f)}
@@ -156,12 +172,7 @@ export default function AnkiSimulator({ card }: { card: McqCard | null }) {
           </div>
         </div>
       </div>
-      <button
-        onClick={() => setFlipped((f) => !f)}
-        className="btn btn-secondary btn-sm"
-      >
-        翻轉卡片（Space）
-      </button>
+      </div>
     </div>
   )
 }

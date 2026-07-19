@@ -221,4 +221,294 @@ body {
   .tool-card:hover .tool-cta {
     gap: 10px;
   }
+
+  /* 兩欄工具頁版面（例如文字選擇題產生器），沿用舊版 mcq.html 的 .app-container 設計 */
+  .app-container {
+    max-width: 1400px;
+    margin: 30px auto;
+    padding: 0 30px;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 30px;
+  }
+
+  @media (max-width: 1024px) {
+    .app-container {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .panel-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--color-panel-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    background-color: var(--color-subtle);
+  }
+
+  .panel-header h2 {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text-primary);
+  }
+
+  .panel-body {
+    padding: 25px;
+  }
+
+  .instruction-text {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin-bottom: 15px;
+  }
+
+  .row-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  /* Gemini API key 輸入列 */
+  .api-key-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: var(--color-subtle);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 8px;
+    padding: 8px 15px;
+    margin-bottom: 15px;
+    transition: all 0.2s ease;
+  }
+
+  .api-key-wrapper:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  .api-key-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--color-text-primary);
+    font-size: 13px;
+    flex-grow: 1;
+    min-width: 0;
+  }
+
+  .api-key-divider {
+    color: var(--color-panel-border);
+    font-weight: 300;
+    user-select: none;
+  }
+
+  .model-select {
+    background-color: #ffffff;
+    border: 1px solid var(--color-panel-border);
+    border-radius: 4px;
+    color: var(--color-text-primary);
+    padding: 4px 8px;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .model-select:focus {
+    border-color: var(--color-primary);
+  }
+
+  /* 卡片解析結果表格 */
+  .table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--color-panel-border);
+  }
+
+  .editable-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13px;
+  }
+
+  .editable-table th,
+  .editable-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--color-panel-border);
+    vertical-align: middle;
+  }
+
+  .editable-table th {
+    background-color: var(--color-subtle);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  .editable-table tbody tr:hover {
+    background-color: var(--color-subtle);
+  }
+
+  .table-row-active {
+    background-color: rgba(37, 99, 235, 0.06);
+  }
+
+  .cell-input {
+    width: 100%;
+    background-color: var(--color-subtle);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--color-text-primary);
+    padding: 6px 10px;
+    font-size: 13px;
+    outline: none;
+  }
+
+  .cell-input:focus {
+    background-color: #ffffff;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  .cell-select {
+    background-color: var(--color-subtle);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--color-text-primary);
+    padding: 6px 8px;
+    outline: none;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .cell-option-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+
+  .cell-opt-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .cell-opt-lbl {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    font-weight: bold;
+  }
+
+  /* Anki 模板程式碼分頁 */
+  .tab-headers {
+    display: flex;
+    border-bottom: 1px solid var(--color-panel-border);
+    margin-bottom: 15px;
+    gap: 4px;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 10px 16px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    position: relative;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover {
+    color: var(--color-text-primary);
+  }
+
+  .tab-btn.active {
+    color: var(--color-primary);
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--color-primary);
+  }
+
+  .tab-intro {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-bottom: 12px;
+  }
+
+  .fields-list {
+    background-color: var(--color-subtle);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .field-item {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .field-item code {
+    background-color: rgba(37, 99, 235, 0.1);
+    color: #1d4ed8;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-right: 12px;
+    width: 110px;
+    flex-shrink: 0;
+  }
+
+  .field-desc {
+    color: var(--color-text-secondary);
+  }
+
+  .code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--color-subtle);
+    padding: 8px 15px;
+    border-radius: 6px 6px 0 0;
+    border: 1px solid var(--color-panel-border);
+    border-bottom: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .code-area {
+    width: 100%;
+    height: 250px;
+    background-color: var(--background);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 0 0 6px 6px;
+    color: #1d4ed8;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 15px;
+    outline: none;
+    resize: vertical;
+  }
 }

@@ -17,7 +17,7 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id']
 
-function CodeBlock({ label, content }: { label: string; content: string }) {
+function CodeBlock({ label, target, content }: { label: string; target: string; content: string }) {
   const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
@@ -28,18 +28,13 @@ function CodeBlock({ label, content }: { label: string; content: string }) {
 
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between">
-        <span className="text-sm font-medium">{label}</span>
+      <div className="code-header">
+        <span>{label}</span>
         <button onClick={handleCopy} className="btn btn-secondary btn-xs">
           {copied ? '已複製！' : '複製'}
         </button>
       </div>
-      <textarea
-        readOnly
-        value={content}
-        rows={10}
-        className="field-input w-full font-mono text-xs"
-      />
+      <textarea readOnly value={content} id={target} className="code-area" />
     </div>
   )
 }
@@ -48,40 +43,52 @@ export default function AnkiTemplatePanel() {
   const [tab, setTab] = useState<TabId>('fields')
 
   return (
-    <div className="card-panel p-3">
-      <p className="mb-2 text-sm text-text-secondary">
-        只要在 Anki 新增一個自訂卡片類型，把以下內容貼入對應位置，就能在手機/電腦呈現一樣的效果。
-      </p>
-      <div className="mb-3 flex gap-3 border-b border-panel-border text-sm">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`pb-2 ${
-              tab === t.id
-                ? 'border-b-2 border-primary font-medium text-primary'
-                : 'text-text-secondary'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+    <div className="card-panel mt-6">
+      <div className="panel-header">
+        <h2>💻 Anki 萬用選擇題模板程式碼</h2>
       </div>
+      <div className="panel-body">
+        <p className="instruction-text">
+          只要在 Anki 中新增一個自訂卡片類型，將以下程式碼貼入對應位置，就能在手機/電腦上呈現完全一樣的效果！
+        </p>
 
-      {tab === 'fields' && (
-        <div className="flex flex-col gap-1 text-sm">
-          <p className="mb-1 text-text-secondary">在 Anki 新增卡片類型時，請建立且精確命名以下 10 個欄位：</p>
-          {ANKI_FIELDS.map((f) => (
-            <div key={f.name}>
-              <code className="rounded bg-gray-100 px-1">{f.name}</code>{' '}
-              <span className="text-text-secondary">{f.desc}</span>
-            </div>
+        <div className="tab-headers">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`tab-btn ${tab === t.id ? 'active' : ''}`}
+            >
+              {t.label}
+            </button>
           ))}
         </div>
-      )}
-      {tab === 'front' && <CodeBlock label="正面模板 (Front Template)" content={ANKI_FRONT_TEMPLATE} />}
-      {tab === 'back' && <CodeBlock label="背面模板 (Back Template)" content={ANKI_BACK_TEMPLATE} />}
-      {tab === 'css' && <CodeBlock label="共享 CSS" content={ANKI_CSS_TEMPLATE} />}
+
+        {tab === 'fields' && (
+          <div>
+            <p className="tab-intro">
+              在 Anki 新增卡片類型 (Note Type) 時，請建立且精確命名以下 10 個欄位：
+            </p>
+            <div className="fields-list">
+              {ANKI_FIELDS.map((f) => (
+                <div key={f.name} className="field-item">
+                  <code>{f.name}</code>
+                  <span className="field-desc">{f.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {tab === 'front' && (
+          <CodeBlock label="正面模板 (Front Template)" target="code-front" content={ANKI_FRONT_TEMPLATE} />
+        )}
+        {tab === 'back' && (
+          <CodeBlock label="背面模板 (Back Template)" target="code-back" content={ANKI_BACK_TEMPLATE} />
+        )}
+        {tab === 'css' && (
+          <CodeBlock label="共享 CSS 樣式 (Styling CSS)" target="code-css" content={ANKI_CSS_TEMPLATE} />
+        )}
+      </div>
     </div>
   )
 }

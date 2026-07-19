@@ -29,6 +29,22 @@ const SAMPLE_PREVIEW_CARD: McqCard = {
     'Myoglobin 在心肌受損後 1-3 小時內最快釋放到血中，但因為它也存在於骨骼肌，特異性較低。Troponin I 則在 3-4 小時後上升，但特異性極高。',
 }
 
+const SAMPLE_MARKDOWN = `1. 關於冠狀動脈疾病（CAD）的診斷與評估，下列敘述何者錯誤？
+A. 運動心電圖是最常見的初步篩檢工具
+B. 心臟電腦斷層血管攝影（CCTA）可用於排除低至中度風險患者的阻塞性病變
+C. 核心心臟造影（SPECT）是藉由評估心肌灌流來偵測缺血
+D. 冠狀動脈造影（CATH）是診斷的黃金標準，但只有在非侵入性檢查異常時才可進行
+答案：D
+解析：冠狀動脈造影（導管檢查）是黃金標準，但若患者有急性冠心症（ACS）或不穩定心絞痛且臨床風險極高，可直接進行侵入性導管檢查，不一定要先經過非侵入性檢查。
+
+2. 一位 65 歲男性因呼吸困難入院，聽診在心尖處可聞及舒張期滾動樣雜音（diastolic rumbling murmur），且第一心音變強。下列哪些發現也可能在此患者身上觀察到？（多選）
+A. 心房顫動（Atrial Fibrillation）
+B. 左心房擴大（Left Atrial Enlargement）
+C. 肺動脈高壓（Pulmonary Hypertension）
+D. 左心室肥大（Left Ventricular Hypertrophy）
+答案：A, B, C
+解析：患者聽診特徵為典型的二尖瓣狹窄（Mitral Stenosis）。二尖瓣狹窄會導致左心房壓力增高並擴大，進而引發心房顫動與肺靜脈高壓/肺動脈高壓。然而，因為血液進入左心室受阻，左心室通常不會肥大。`
+
 const PROMPT_TEMPLATE = (sourceText: string) => `你是一個幫忙把文字內容轉換成 Anki 選擇題卡片的助手。請閱讀以下文字內容，盡量抽取或改寫成多張選擇題，用 JSON 陣列格式回傳，不要有其他文字或說明。
 
 每個元素的格式：
@@ -109,12 +125,20 @@ export default function McqToolPage() {
     setCards((prev) => prev.map((c) => (c.localId === localId ? { ...c, ...patch } : c)))
   }
 
-  function removeCard(localId: string) {
-    setCards((prev) => prev.filter((c) => c.localId !== localId))
+  function removeCard(index: number) {
+    if (!confirm(`確定要刪除第 ${index + 1} 題嗎？`)) return
+    setCards((prev) => prev.filter((_, i) => i !== index))
+    setPreviewIndex((prev) => Math.min(prev, cards.length - 2))
   }
 
-  function addEmptyCard() {
-    setCards((prev) => [...prev, makeCardState()])
+  function handleLoadSample() {
+    setSourceText(SAMPLE_MARKDOWN)
+  }
+
+  function handleClear() {
+    setSourceText('')
+    setCards([])
+    setMessage(null)
   }
 
   function handleDownloadCsv() {
@@ -160,155 +184,209 @@ export default function McqToolPage() {
     }
   }
 
+  const previewCard = cards[Math.min(previewIndex, cards.length - 1)] ?? SAMPLE_PREVIEW_CARD
+
   return (
-    <main className="mx-auto max-w-2xl p-6">
-      <h1 className="mb-4 text-xl font-semibold">文字選擇題產生器</h1>
-
-      <div className="mb-4 flex flex-col gap-2">
-        <div className="flex gap-2">
-          <input
-            type="password"
-            placeholder="Gemini API Key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            className="flex-1 field-input"
-          />
-          <select
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            className="field-input w-auto"
-          >
-            <option value="gemini-3.5-flash">gemini-3.5-flash（推薦）</option>
-            <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite（極速）</option>
-            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview（深度解析）</option>
-          </select>
-        </div>
-        <textarea
-          placeholder="貼上要轉換成選擇題的文字內容"
-          value={sourceText}
-          onChange={(e) => setSourceText(e.target.value)}
-          rows={8}
-          className="field-input"
-        />
-        <div className="flex gap-2">
-          <button
-            onClick={handleParse}
-            disabled={parsing}
-            className="btn btn-primary"
-          >
-            {parsing ? '解析中...' : 'AI 解析'}
-          </button>
-          <button onClick={addEmptyCard} className="btn btn-secondary">
-            手動新增一張空卡片
-          </button>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        {cards.map((card, index) => (
-          <div key={card.localId} className="card-panel p-3">
-            <div className="mb-2 text-xs text-text-secondary">第 {index + 1} 張</div>
-            <input
-              placeholder="題目"
-              value={card.questionText}
-              onChange={(e) => updateCard(card.localId, { questionText: e.target.value })}
-              className="mb-2 w-full field-input"
-            />
-            <div className="mb-2 grid grid-cols-3 gap-1">
-              {OPTION_KEYS.map((key, i) => (
-                <input
-                  key={key}
-                  placeholder={`選項 ${String.fromCharCode(65 + i)}`}
-                  value={card[key]}
-                  onChange={(e) => updateCard(card.localId, { [key]: e.target.value })}
-                  className="field-input"
-                />
-              ))}
+    <main className="app-container">
+      {/* 左欄：輸入與編輯區 */}
+      <section className="flex flex-col gap-6">
+        <div className="card-panel">
+          <div className="panel-header">
+            <h2>📥 1. 輸入文字內容</h2>
+            <div className="row-actions">
+              <button onClick={handleLoadSample} className="btn btn-secondary btn-sm">
+                💡 載入範例
+              </button>
+              <button onClick={handleClear} className="btn btn-danger-outline btn-sm">
+                🗑️ 清除
+              </button>
             </div>
-            <div className="mb-2 flex items-center gap-3">
+          </div>
+          <div className="panel-body">
+            <p className="instruction-text">
+              貼上你的文字內容（例如考卷、筆記），系統會用 AI 自動解析題號、題目、選項、正確答案與解析。
+            </p>
+
+            <div className="api-key-wrapper">
+              <span>🔑</span>
               <input
-                placeholder="正確答案，例如 A 或 AC"
-                value={card.answer}
-                onChange={(e) => updateCard(card.localId, { answer: e.target.value })}
-                className="field-input"
+                type="password"
+                placeholder="輸入您的 Gemini API Key"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="api-key-input"
               />
-              <label className="flex items-center gap-1 text-sm">
-                <input
-                  type="checkbox"
-                  checked={card.isMultiple}
-                  onChange={(e) => updateCard(card.localId, { isMultiple: e.target.checked })}
-                />
-                多選題
-              </label>
-            </div>
-            <textarea
-              placeholder="備註（選填）"
-              value={card.notes}
-              onChange={(e) => updateCard(card.localId, { notes: e.target.value })}
-              className="mb-2 w-full field-input"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => setPreviewIndex(index)}
-                className="text-xs text-primary underline"
+              <span className="api-key-divider">|</span>
+              <span>🤖</span>
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="model-select"
               >
-                在下方模擬器預覽這張
-              </button>
-              <button
-                onClick={() => removeCard(card.localId)}
-                className="text-xs text-danger underline"
+                <option value="gemini-3.5-flash">gemini-3.5-flash（推薦）</option>
+                <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite（極速）</option>
+                <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview（深度解析）</option>
+              </select>
+              <a
+                href="https://aistudio.google.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="whitespace-nowrap text-xs font-semibold text-accent"
               >
-                移除這張卡片
-              </button>
+                ❓ 獲取 Key
+              </a>
             </div>
-          </div>
-        ))}
-      </div>
 
-      {cards.length > 0 && (
-        <div className="mt-4 flex flex-col gap-2">
-          <input
-            placeholder="這批卡片是為了什麼而做的？（選填）"
-            value={purpose}
-            onChange={(e) => setPurpose(e.target.value)}
-            className="field-input"
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="btn btn-primary"
-            >
-              {saving ? '存入中...' : '存入歷史紀錄'}
-            </button>
-            <button
-              onClick={handleDownloadCsv}
-              className="btn btn-secondary"
-            >
-              下載 CSV
+            <textarea
+              placeholder="貼上文字內容，例如：
+1. 關於二尖瓣狹窄的敘述，下列何者錯誤？
+A. 最常見的原因是風濕熱
+B. 心尖處可聽到舒張期心雜音
+C. 常合併心房顫動
+D. 第一心音會變弱
+答案：D
+解析：二尖瓣狹窄時，第一心音通常會變強（Loud S1）..."
+              value={sourceText}
+              onChange={(e) => setSourceText(e.target.value)}
+              rows={10}
+              className="field-input mb-4 font-mono"
+            />
+
+            <button onClick={handleParse} disabled={parsing} className="btn btn-primary w-full">
+              {parsing ? '✨ 解析中...' : '✨ AI 智慧解析'}
             </button>
           </div>
         </div>
-      )}
 
-      {message && (
-        <p className={`mt-3 text-sm ${message.type === 'ok' ? 'text-success' : 'text-danger'}`}>
-          {message.text}
-        </p>
-      )}
+        {cards.length > 0 && (
+          <div className="card-panel">
+            <div className="panel-header">
+              <h2>
+                ✅ 2. 預覽與修改解析結果 ({cards.length} 題)
+              </h2>
+              <div className="row-actions">
+                <button onClick={handleSave} disabled={saving} className="btn btn-secondary btn-sm">
+                  {saving ? '存入中...' : '🔖 存入紀錄'}
+                </button>
+                <button onClick={handleDownloadCsv} className="btn btn-success btn-sm">
+                  📄 匯出 CSV
+                </button>
+              </div>
+            </div>
+            <div className="panel-body">
+              <input
+                placeholder="這批卡片是為了什麼而做的？（選填，存入紀錄時會用到）"
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+                className="field-input mb-3"
+              />
+              <div className="table-container">
+                <table className="editable-table">
+                  <thead>
+                    <tr>
+                      <th>題號</th>
+                      <th>題目</th>
+                      <th>類型</th>
+                      <th>選項 (A-F)</th>
+                      <th>答案</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cards.map((card, index) => (
+                      <tr
+                        key={card.localId}
+                        className={index === previewIndex ? 'table-row-active' : ''}
+                        onClick={(e) => {
+                          const tag = (e.target as HTMLElement).tagName
+                          if (['INPUT', 'SELECT', 'BUTTON', 'TEXTAREA'].includes(tag)) return
+                          setPreviewIndex(index)
+                        }}
+                      >
+                        <td>{index + 1}</td>
+                        <td>
+                          <textarea
+                            className="cell-input"
+                            rows={2}
+                            value={card.questionText}
+                            onChange={(e) =>
+                              updateCard(card.localId, { questionText: e.target.value })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <select
+                            className="cell-select"
+                            value={card.isMultiple ? 'y' : ''}
+                            onChange={(e) =>
+                              updateCard(card.localId, { isMultiple: e.target.value === 'y' })
+                            }
+                          >
+                            <option value="">單選題</option>
+                            <option value="y">多選題</option>
+                          </select>
+                        </td>
+                        <td>
+                          <div className="cell-option-grid">
+                            {OPTION_KEYS.map((key, i) => (
+                              <div key={key} className="cell-opt-wrap">
+                                <span className="cell-opt-lbl">{String.fromCharCode(65 + i)}</span>
+                                <input
+                                  className="cell-input"
+                                  value={card[key]}
+                                  onChange={(e) => updateCard(card.localId, { [key]: e.target.value })}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                        <td>
+                          <input
+                            className="cell-input text-center"
+                            placeholder="A, C"
+                            value={card.answer}
+                            onChange={(e) => updateCard(card.localId, { answer: e.target.value })}
+                          />
+                        </td>
+                        <td>
+                          <div className="row-actions">
+                            <button
+                              onClick={() => setPreviewIndex(index)}
+                              className="btn btn-secondary btn-xs"
+                              title="即時模擬預覽"
+                            >
+                              👁️
+                            </button>
+                            <button
+                              onClick={() => removeCard(index)}
+                              className="btn btn-danger-outline btn-xs"
+                              title="刪除本題"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
-      <div className="mt-8">
-        <h2 className="mb-3 text-lg font-semibold">Anki 效果即時模擬器</h2>
-        <AnkiSimulator
-          key={cards[Math.min(previewIndex, cards.length - 1)]?.localId ?? 'sample'}
-          card={cards[Math.min(previewIndex, cards.length - 1)] ?? SAMPLE_PREVIEW_CARD}
-        />
-      </div>
+        {message && (
+          <p className={`text-sm ${message.type === 'ok' ? 'text-success' : 'text-danger'}`}>
+            {message.text}
+          </p>
+        )}
+      </section>
 
-      <div className="mt-6">
-        <h2 className="mb-3 text-lg font-semibold">Anki 萬用選擇題模板程式碼</h2>
+      {/* 右欄：卡片預覽與 Anki 模板設定 */}
+      <section className="flex flex-col gap-6">
+        <AnkiSimulator key={previewCard === SAMPLE_PREVIEW_CARD ? 'sample' : previewIndex} card={previewCard} />
         <AnkiTemplatePanel />
-      </div>
+      </section>
 
       {/* 讓模擬器能比照 Anki 內部渲染數學公式，而不是顯示未渲染的原始語法。
           beforeInteractive 只能放在根 layout，這裡改用 afterInteractive——
