@@ -1,0 +1,354 @@
+/* AnkiGen - 圖片標記工具 樣式 */
+
+/* 分步驟精靈式頁面切換：1.選圖/命名 → 2.匯出模式/模擬器，避免兩步驟擠在同一畫面 */
+.wizard-view {
+  display: none;
+}
+
+.wizard-view.active {
+  display: block;
+}
+
+.wizard-single-col {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 0 30px;
+}
+
+.wizard-nav {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 30px;
+}
+
+/* 拖曳/選取圖片區 */
+.slide-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 2px dashed var(--bg-panel-border);
+  border-radius: var(--border-radius-md);
+  padding: 30px 20px;
+  text-align: center;
+  color: var(--text-secondary);
+  background-color: var(--bg-subtle);
+  transition: var(--transition-smooth);
+  margin-bottom: 15px;
+}
+
+.slide-dropzone.drag-over {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.slide-dropzone i {
+  font-size: 28px;
+  color: var(--color-primary);
+}
+
+.slide-dropzone p {
+  font-size: 13px;
+}
+
+/* 提示卡片 */
+.notice-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background-color: var(--color-accent-light);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+  border-radius: var(--border-radius-sm);
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.notice-box i {
+  color: var(--color-accent);
+  margin-top: 2px;
+}
+
+.notice-box code {
+  background-color: rgba(14, 165, 233, 0.12);
+  color: #0c4a6e;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* 圖片標記格線 */
+.slide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.slide-card {
+  border: 1px solid var(--bg-panel-border);
+  border-radius: var(--border-radius-md);
+  background-color: var(--bg-subtle);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition-smooth);
+}
+
+.slide-card.slide-card-excluded {
+  opacity: 0.5;
+}
+
+.slide-card.slide-card-active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.slide-thumb-wrap {
+  width: 100%;
+  height: 130px;
+  background-color: var(--bg-panel-border);
+  overflow: hidden;
+}
+
+.slide-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.slide-fields {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slide-field-label,
+.field-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.slide-field-label:first-child,
+.field-label:first-child {
+  margin-top: 0;
+}
+
+.slide-filename-input.slide-filename-input-error {
+  border-color: var(--color-danger) !important;
+  background-color: var(--option-wrong-bg);
+}
+
+.slide-filename-warning {
+  font-size: 11px;
+  color: var(--color-danger);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.slide-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-top: 1px solid var(--bg-panel-border);
+}
+
+.slide-include-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+/* 匯出模式切換 */
+.mode-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--bg-panel-border);
+}
+
+.mode-tab-btn {
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 10px 16px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  transition: var(--transition-smooth);
+}
+
+.mode-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.mode-tab-btn.active {
+  color: var(--color-primary);
+}
+
+.mode-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--color-primary);
+}
+
+.mode-panel {
+  display: none;
+}
+
+.mode-panel.active {
+  display: block;
+}
+
+.field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.field-row label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.field-row-inline {
+  display: flex;
+  gap: 10px;
+}
+
+.field-row-inline .cell-input {
+  flex-grow: 1;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mcq-table-thumb {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+/* 模擬器題目裡嵌入的圖片（題目欄位本身就含有 <img> 標籤，比照 Anki 實際呈現方式） */
+.sim-question img {
+  display: block;
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: var(--border-radius-sm);
+  background-color: var(--bg-subtle);
+  margin-bottom: 10px;
+}
+
+/* 大一點的單題編輯區（選擇題模式），取代擠在表格欄位裡編輯題目 */
+.mcq-edit-panel {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--bg-panel-border);
+  border-radius: var(--border-radius-md);
+  padding: 18px;
+  margin-bottom: 15px;
+}
+
+.mcq-edit-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.mcq-edit-thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background-color: var(--bg-panel-border);
+}
+
+.mcq-edit-filename {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.mcq-edit-question-textarea {
+  font-size: 15px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.mcq-edit-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.mcq-edit-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mcq-edit-opt-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mcq-edit-opt-wrap .cell-input {
+  flex-grow: 1;
+}
+
+.compact-question-preview {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Image Occlusion 模式的模擬器預覽：只顯示圖片本身，遮蓋範圍留給 Anki 內建功能處理 */
+.occlusion-image-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  background-color: var(--bg-subtle);
+  margin-bottom: 16px;
+}
+
+.occlusion-image-wrap img {
+  width: 100%;
+  height: auto;
+  display: block;
+}

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnkiGen - 圖片標記工具</title>
+  <!-- 引入 Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- 引入 FontAwesome 圖標 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="slides.css">
+</head>
+
+<body class="medical-theme">
+  <!-- 背景發光特效 -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <header class="app-header">
+    <div class="header-container">
+      <a class="logo" href="index.html">
+        <i class="fa-solid fa-lightbulb"></i>
+        <span>AnkiGen <span class="logo-accent">Hub</span></span>
+      </a>
+      <div class="app-desc">
+        <span class="app-slogan">The central hub for instant Anki creation</span>
+        <a href="index.html" class="nav-home-link"><i class="fa-solid fa-house"></i> 回首頁</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wizard-main">
+
+    <!-- 步驟一：選取圖片 + 重新命名 -->
+    <section class="wizard-view active" id="step-label-view">
+      <div class="wizard-single-col">
+        <div class="card-panel">
+          <div class="panel-header">
+            <h2><i class="fa-solid fa-images"></i> 1. 選取圖片</h2>
+            <div class="header-actions">
+              <button id="btn-clear-slides" class="btn btn-danger-outline btn-sm"><i class="fa-solid fa-trash-can"></i>
+                全部清除</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <p class="instruction-text">選取本機的圖片檔案（可一次選取多張）。所有圖片只會留在你的瀏覽器分頁內處理，不會上傳到任何伺服器。</p>
+
+            <div class="slide-dropzone" id="slide-dropzone">
+              <input type="file" id="slide-file-input" accept="image/*" multiple hidden>
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <p>拖曳圖片到這裡，或</p>
+              <button class="btn btn-primary btn-sm" id="btn-select-images" type="button">選擇圖片</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-panel mt-4" id="slide-grid-panel" style="display: none;">
+          <div class="panel-header">
+            <h2><i class="fa-solid fa-tags"></i> 2. 重新命名檔案與選取 (<span id="slide-count">0</span> 張)</h2>
+            <div class="header-actions">
+              <button id="btn-select-all-slides" class="btn btn-secondary btn-sm">全選</button>
+              <button id="btn-deselect-all-slides" class="btn btn-secondary btn-sm">取消全選</button>
+              <button id="btn-download-renamed" class="btn btn-secondary btn-sm"><i class="fa-solid fa-download"></i>
+                下載重新命名的圖片</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <p class="instruction-text">
+              「檔案名稱」預設取自原始檔名，可以直接改成這張圖片的正式名稱（例如：封面.jpg）。<strong>就算你沒有加副檔名，系統也會自動幫你補上原始的圖片格式（.jpg
+                / .png...）</strong>，確保匯入 Anki 後圖片一定讀得到。瀏覽器沒辦法直接改掉你電腦裡的原始檔案，所以改好之後，請按右上角「下載重新命名的圖片」，會下載內容相同、檔名已經改好的圖片副本，之後把這些下載下來的檔案複製進
+              Anki 媒體庫即可。取消勾選「納入匯出」可以先略過還沒確認的圖片。
+            </p>
+            <div class="notice-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                下一步的匯出模式（選擇題 CSV / Image Occlusion CSV）都會直接使用這裡改好的檔案名稱來參照圖片，所以請先把名字確認好，再繼續下一步。
+              </div>
+            </div>
+            <div class="slide-grid" id="slide-grid"></div>
+          </div>
+        </div>
+
+        <div class="wizard-nav flex-end mt-4">
+          <button id="btn-goto-export" class="btn btn-primary btn-lg">
+            下一步：設定匯出內容 <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 步驟二：匯出模式 + 模擬預覽 + Anki 模板 -->
+    <section class="wizard-view" id="step-export-view">
+      <div class="wizard-nav mt-0 mb-3">
+        <button id="btn-back-to-label" class="btn btn-secondary btn-sm">
+          <i class="fa-solid fa-arrow-left"></i> 上一步：繼續標記圖片
+        </button>
+      </div>
+
+      <div class="app-container">
+        <!-- 左欄：匯出模式與編輯 -->
+        <section class="panel-left">
+          <div class="card-panel">
+            <div class="panel-header">
+              <h2><i class="fa-solid fa-file-export"></i> 3. 匯出模式</h2>
+            </div>
+            <div class="panel-body">
+              <div class="mode-tabs">
+                <button class="mode-tab-btn active" data-mode="mcq"><i class="fa-solid fa-list-check"></i> 選擇題模式</button>
+                <button class="mode-tab-btn" data-mode="occlusion"><i class="fa-solid fa-layer-group"></i> Image
+                  Occlusion 模式</button>
+              </div>
+
+              <!-- 選擇題模式 -->
+              <div class="mode-panel active" id="mode-panel-mcq">
+                <div class="api-key-wrapper mb-3">
+                  <i class="fa-solid fa-key api-key-icon" title="Gemini API Key"></i>
+                  <input type="password" id="gemini-api-key" placeholder="輸入您的 Gemini API Key（用於 AI 產生干擾選項）">
+
+                  <span class="api-key-divider">|</span>
+
+                  <i class="fa-solid fa-robot api-key-icon" title="選擇 AI 模型"></i>
+                  <select id="gemini-model-select" class="model-select" title="選擇模型版本">
+                    <option value="gemini-3.5-flash" selected>gemini-3.5-flash (推薦)</option>
+                    <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (極速)</option>
+                    <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (深度解析)</option>
+                  </select>
+                  <input type="text" id="gemini-custom-model" class="custom-model-input" placeholder="例如: gemini-experimental"
+                    style="display: none;">
+
+                  <a href="https://aistudio.google.com/" target="_blank" class="api-key-link"
+                    title="前往 Google AI Studio 免費申請 API Key"><i class="fa-solid fa-circle-question"></i> 獲取 Key</a>
+                </div>
+
+                <div class="field-row">
+                  <label for="glossary-file-input">干擾選項詞彙表 (.md，選填)</label>
+                  <div class="field-row-inline">
+                    <input type="file" id="glossary-file-input" accept=".md,.markdown,text/markdown,text/plain" hidden>
+                    <button id="btn-upload-glossary" class="btn btn-secondary btn-sm" type="button">
+                      <i class="fa-solid fa-upload"></i> 上傳詞彙表 (.md)
+                    </button>
+                    <span class="field-hint" id="glossary-status">尚未上傳，AI 會憑空生成干擾選項</span>
+                  </div>
+                  <p class="field-hint">
+                    上傳一份 .md 文字檔，裡面條列你這份牌組相關的詞彙（例如器官、疾病、構造名稱，一行一個或用逗號、頓號分隔皆可）。產生干擾選項時會優先從這份清單裡挑選同類別、容易混淆的項目。
+                  </p>
+                </div>
+
+                <div class="field-row">
+                  <label for="slide-shared-prompt">套用到每張圖片的提問文字</label>
+                  <div class="field-row-inline">
+                    <input type="text" id="slide-shared-prompt" class="cell-input" value="這張圖片顯示的是什麼？">
+                    <button id="btn-apply-prompt" class="btn btn-secondary btn-sm" type="button"
+                      title="用目前的提問文字重新產生下面每一列的「題目」欄位">
+                      <i class="fa-solid fa-arrow-rotate-right"></i> 套用到全部題目
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 大一點的單題編輯區，取代擠在表格欄位裡編輯 -->
+                <div class="mcq-edit-panel" id="mcq-edit-panel" style="display:none;">
+                  <div class="mcq-edit-header">
+                    <img id="mcq-edit-thumb" class="mcq-edit-thumb" src="" alt="">
+                    <div>
+                      <div class="mcq-edit-filename" id="mcq-edit-filename"></div>
+                      <div class="field-hint">正在編輯這張卡片的內容</div>
+                    </div>
+                  </div>
+
+                  <label class="field-label">提問文字</label>
+                  <textarea id="mcq-edit-question" class="cell-input mcq-edit-question-textarea" rows="4"></textarea>
+
+                  <div class="mcq-edit-two-col mt-3">
+                    <div>
+                      <label class="field-label">題型</label>
+                      <select id="mcq-edit-type" class="cell-select w-100"></select>
+                    </div>
+                    <div>
+                      <label class="field-label">答案 (例：A 或 A, C)</label>
+                      <input type="text" id="mcq-edit-answer" class="cell-input" placeholder="A, C">
+                    </div>
+                  </div>
+
+                  <div class="mt-3 flex-between">
+                    <label class="field-label" style="margin:0;">選項 (A-F，留空表示沒有這個選項)</label>
+                    <button id="btn-generate-distractors" class="btn btn-secondary btn-sm" type="button"
+                      title="優先從牌組裡其他卡片已標記的答案挑選干擾選項，不夠的話再由 AI 生成，只會填入目前空白的 B/C/D 欄位">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i> AI 產生干擾選項
+                    </button>
+                  </div>
+                  <div class="mcq-edit-options-grid mt-3">
+                    <div class="mcq-edit-opt-wrap"><span class="cell-opt-lbl">A</span><input type="text"
+                        class="cell-input" id="mcq-edit-optionA"></div>
+                    <div class="mcq-edit-opt-wrap"><span class="cell-opt-lbl">B</span><input type="text"
+                        class="cell-input" id="mcq-edit-optionB"></div>
+                    <div class="mcq-edit-opt-wrap"><span class="cell-opt-lbl">C</span><input type="text"
+                        class="cell-input" id="mcq-edit-optionC"></div>
+                    <div class="mcq-edit-opt-wrap"><span class="cell-opt-lbl">D</span><input type="text"
+                        class="cell-input" id="mcq-edit-optionD"></div>
+                    <div class="mcq-edit-opt-wrap"><span class="cell-opt-lbl">E</span><input type="text"
+                        class="cell-input" id="mcq-edit-optionE" placeholder="(無)"></div>
+                    <div class="mcq-edit-opt-wrap"><span class="cell-opt-lbl">F</span><input type="text"
+                        class="cell-input" id="mcq-edit-optionF" placeholder="(無)"></div>
+                  </div>
+                </div>
+
+                <div class="table-container mt-3">
+                  <table class="editable-table" id="slide-mcq-table">
+                    <thead>
+                      <tr>
+                        <th width="12%">圖片</th>
+                        <th width="43%">提問文字</th>
+                        <th width="13%">類型</th>
+                        <th width="12%">答案</th>
+                        <th width="20%">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody id="slide-mcq-table-body"></tbody>
+                  </table>
+                </div>
+
+                <div class="mt-3 flex-between">
+                  <span class="instruction-text" id="mcq-empty-hint">先選取圖片並勾選納入匯出，這裡就會自動整理成選擇題。</span>
+                  <button id="btn-download-mcq-csv" class="btn btn-success"><i class="fa-solid fa-file-csv"></i> 匯出 Anki
+                    匯入檔 (CSV)</button>
+                </div>
+              </div>
+
+              <!-- Image Occlusion 模式：直接對應 Anki 內建的 Image Occlusion 筆記類型 -->
+              <div class="mode-panel" id="mode-panel-occlusion">
+                <div class="notice-box">
+                  <i class="fa-solid fa-circle-info"></i>
+                  <div>
+                    這裡匯出的欄位順序對應 Anki <strong>內建</strong>的 Image Occlusion 筆記類型：<code>Occlusion</code>、<code>Image</code>、<code>Header</code>、<code>Back
+                      Extra</code>、<code>Comments</code>。<code>Image</code> 會帶入圖片標籤、<code>Header</code>
+                    帶入檔名（去除副檔名）、<code>Back Extra</code> 帶入你填的備註、<code>Comments</code> 留空。<code>Occlusion</code>
+                    是這個筆記類型的<strong>第一欄位</strong>，Anki 匯入時會用第一欄位判斷筆記是不是空白，如果留空整列會被直接跳過、完全不會被匯入——所以這裡改成帶入「尚未框選：檔名」這樣的提示文字（每張圖片內容都不同，避免被
+                    Anki 誤判成彼此重複）。這只是讓筆記能先匯入的佔位文字，不是真正的遮蓋範圍，匯入後每一張筆記都還沒有卡片，你需要在 Anki
+                    打開這張筆記、用內建的遮罩編輯器畫出實際的遮蓋範圍，Anki 才會產生真正可複習的卡片。匯入時請把「筆記類型」選成 Image Occlusion，並確認欄位對應順序一致。
+                  </div>
+                </div>
+                <div class="table-container">
+                  <table class="editable-table" id="slide-occlusion-table">
+                    <thead>
+                      <tr>
+                        <th width="20%">縮圖</th>
+                        <th width="35%">檔名 (Header / Image)</th>
+                        <th width="45%">備註 (Back Extra)</th>
+                      </tr>
+                    </thead>
+                    <tbody id="slide-occlusion-table-body"></tbody>
+                  </table>
+                </div>
+                <div class="mt-3 flex-between">
+                  <span class="instruction-text" id="occlusion-empty-hint">先選取圖片並勾選納入匯出，這裡就會自動整理。</span>
+                  <button id="btn-download-occlusion-csv" class="btn btn-success"><i class="fa-solid fa-file-csv"></i>
+                    匯出 Image Occlusion 匯入檔 (CSV)</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 右欄：模擬器 + Anki 模板程式碼 -->
+        <section class="panel-right">
+          <div class="card-panel">
+            <div class="panel-header">
+              <h2><i class="fa-solid fa-mobile-screen-button"></i> Anki 效果即時模擬器</h2>
+              <div class="header-actions">
+                <button id="ss-btn-simulate-flip" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate"></i>
+                  翻轉卡片 (Space)</button>
+              </div>
+            </div>
+            <div class="panel-body flex-center py-4">
+              <div class="anki-card-container" id="ss-simulator-card">
+                <div class="anki-card-inner">
+
+                  <!-- 正面 -->
+                  <div class="anki-card-face anki-card-front">
+                    <div id="sim-mcq-front-block">
+                      <div class="sim-badge-container">
+                        <span class="sim-card-type-badge" id="ss-type-badge">單選題</span>
+                        <span class="sim-card-tag">Front (正面)</span>
+                      </div>
+                      <div class="sim-question" id="ss-question">請先選取並標記圖片</div>
+                      <div class="sim-options-list" id="ss-options-front"></div>
+                      <div class="sim-tip">提示：點選一個選項進行標記，改選其他選項會自動取代原本的選擇</div>
+                    </div>
+                    <div id="sim-occ-front-block" style="display:none">
+                      <div class="sim-badge-container">
+                        <span class="sim-card-type-badge">Image Occlusion</span>
+                        <span class="sim-card-tag">Front (正面)</span>
+                      </div>
+                      <div class="occlusion-image-wrap">
+                        <img id="ss-occ-front-img" src="" alt="">
+                      </div>
+                      <div class="sim-question" id="ss-occ-header">-</div>
+                      <div class="sim-tip">提示：遮蓋範圍需要匯入 Anki 後手動框選，這裡只預覽圖片與標題是否正確</div>
+                    </div>
+                  </div>
+
+                  <!-- 背面 -->
+                  <div class="anki-card-face anki-card-back">
+                    <div id="sim-mcq-back-block">
+                      <div class="sim-badge-container">
+                        <span class="sim-card-type-badge" id="ss-type-badge-back">單選題</span>
+                        <span class="sim-card-tag">Back (背面)</span>
+                      </div>
+                      <div class="sim-question" id="ss-question-back">請先選取並標記圖片</div>
+                      <div class="sim-options-list" id="ss-options-back"></div>
+                      <hr class="sim-divider">
+                      <div class="sim-answer-box">
+                        正確答案：<span class="sim-correct-ans" id="ss-correct-ans">-</span>
+                      </div>
+                      <div class="sim-explanation" id="ss-explanation-box">
+                        <div class="sim-explanation-title">解析</div>
+                        <div class="sim-explanation-content" id="ss-explanation-content"></div>
+                      </div>
+                    </div>
+                    <div id="sim-occ-back-block" style="display:none">
+                      <div class="sim-badge-container">
+                        <span class="sim-card-type-badge">Image Occlusion</span>
+                        <span class="sim-card-tag">Back (背面)</span>
+                      </div>
+                      <div class="occlusion-image-wrap">
+                        <img id="ss-occ-back-img" src="" alt="">
+                      </div>
+                      <div class="sim-question" id="ss-occ-header-back">-</div>
+                      <div class="sim-explanation" id="ss-occ-explanation-box">
+                        <div class="sim-explanation-title">備註 (Back Extra)</div>
+                        <div class="sim-explanation-content" id="ss-occ-explanation-content"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Anki 卡片模板程式碼（僅選擇題模式使用；Image Occlusion 用的是 Anki 內建筆記類型，不需要自訂模板） -->
+          <div class="card-panel mt-4" id="tpl-panel-mcq">
+            <div class="panel-header">
+              <h2><i class="fa-solid fa-code"></i> Anki 萬用選擇題模板程式碼</h2>
+            </div>
+            <div class="panel-body">
+              <p class="instruction-text">只要在 Anki 中新增一個自訂卡片類型，將以下程式碼貼入對應位置，就能呈現完全一樣的效果！（跟「選擇題卡片生成器」用的是同一個筆記類型，如果你已經在那邊建立過，這裡不用重複建立。）</p>
+
+              <div class="tab-container">
+                <div class="tab-headers">
+                  <button class="tab-btn active" data-tab="tpl-tab-fields"><i class="fa-solid fa-list"></i> 1. 欄位設定</button>
+                  <button class="tab-btn" data-tab="tpl-tab-front"><i class="fa-solid fa-window-maximize"></i> 2. 正面
+                    HTML</button>
+                  <button class="tab-btn" data-tab="tpl-tab-back"><i class="fa-solid fa-window-restore"></i> 3. 背面
+                    HTML</button>
+                  <button class="tab-btn" data-tab="tpl-tab-css"><i class="fa-solid fa-css3-alt"></i> 4. 共享 CSS</button>
+                </div>
+
+                <div class="tab-content active" id="tpl-tab-fields">
+                  <p class="tab-intro">在 Anki 新增卡片類型 (Note Type) 時，請<strong>建立且精確命名</strong>以下 10 個欄位：</p>
+                  <div class="fields-list">
+                    <div class="field-item"><code>Question</code> <span class="field-desc">存放題目內容（含圖片標籤）</span></div>
+                    <div class="field-item"><code>OptionA</code> <span class="field-desc">選項 A 內容</span></div>
+                    <div class="field-item"><code>OptionB</code> <span class="field-desc">選項 B 內容</span></div>
+                    <div class="field-item"><code>OptionC</code> <span class="field-desc">選項 C 內容</span></div>
+                    <div class="field-item"><code>OptionD</code> <span class="field-desc">選項 D 內容</span></div>
+                    <div class="field-item"><code>OptionE</code> <span class="field-desc">選項 E 內容 (選填，無則留空)</span></div>
+                    <div class="field-item"><code>OptionF</code> <span class="field-desc">選項 F 內容 (選填，無則留空)</span></div>
+                    <div class="field-item"><code>Answer</code> <span class="field-desc">答案英文字母，如 A 或 A, C</span></div>
+                    <div class="field-item"><code>IsMultiple</code> <span
+                        class="field-desc">若是多選題，隨便填入任何字(如y)，單選則<strong>留空</strong></span></div>
+                    <div class="field-item"><code>Explanation</code> <span class="field-desc">卡片解析內容 (選填)</span></div>
+                  </div>
+                </div>
+
+                <div class="tab-content" id="tpl-tab-front">
+                  <div class="code-header">
+                    <span>正面模板 (Front Template)</span>
+                    <button class="btn btn-secondary btn-xs btn-copy" data-target="tpl-code-front"><i
+                        class="fa-regular fa-copy"></i> 複製</button>
+                  </div>
+                  <textarea readonly class="code-area" id="tpl-code-front"></textarea>
+                </div>
+
+                <div class="tab-content" id="tpl-tab-back">
+                  <div class="code-header">
+                    <span>背面模板 (Back Template)</span>
+                    <button class="btn btn-secondary btn-xs btn-copy" data-target="tpl-code-back"><i
+                        class="fa-regular fa-copy"></i> 複製</button>
+                  </div>
+                  <textarea readonly class="code-area" id="tpl-code-back"></textarea>
+                </div>
+
+                <div class="tab-content" id="tpl-tab-css">
+                  <div class="code-header">
+                    <span>共享 CSS 樣式 (Styling CSS)</span>
+                    <button class="btn btn-secondary btn-xs btn-copy" data-target="tpl-code-css"><i
+                        class="fa-regular fa-copy"></i> 複製</button>
+                  </div>
+                  <textarea readonly class="code-area" id="tpl-code-css"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Image Occlusion 模式改用 Anki 內建筆記類型，這裡只放欄位對應提醒，不需要自訂模板 -->
+          <div class="card-panel mt-4" id="tpl-panel-occlusion" style="display:none;">
+            <div class="panel-header">
+              <h2><i class="fa-solid fa-code"></i> 匯入設定提醒</h2>
+            </div>
+            <div class="panel-body">
+              <p class="instruction-text">
+                Image Occlusion 模式用的是 Anki <strong>內建</strong>的 Image Occlusion 筆記類型，不需要自己建立模板。匯入 CSV
+                時，請在 Anki 的匯入畫面把「筆記類型」選成 <strong>Image Occlusion</strong>，並確認欄位對應順序如下：
+              </p>
+              <div class="fields-list">
+                <div class="field-item"><code>1. Occlusion</code> <span class="field-desc">已帶入「尚未框選：檔名」佔位文字（不能留空，否則
+                    Anki 會把整列當空白筆記跳過不匯入）；匯入後請在 Anki 打開筆記，用遮罩編輯器畫出實際遮蓋範圍</span>
+                </div>
+                <div class="field-item"><code>2. Image</code> <span class="field-desc">已自動帶入 &lt;img src="檔名"&gt;</span>
+                </div>
+                <div class="field-item"><code>3. Header</code> <span class="field-desc">已自動帶入檔名（去除副檔名）</span></div>
+                <div class="field-item"><code>4. Back Extra</code> <span class="field-desc">已自動帶入你填的備註</span></div>
+                <div class="field-item"><code>5. Comments</code> <span class="field-desc">留空</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>AnkiGen Hub &copy; 2026. 幫助你更有效率地製作 Anki 卡片。</p>
+    </div>
+  </footer>
+
+  <!-- 引入核心 JavaScript -->
+  <script src="slides.js"></script>
+</body>
+
+</html>

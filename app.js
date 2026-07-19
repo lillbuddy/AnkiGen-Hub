@@ -1,4 +1,4 @@
-// AnkiMed - 核心應用程式邏輯 (JavaScript)
+// AnkiGen - 核心應用程式邏輯 (JavaScript)
 
 // 全域卡片陣列
 let parsedCards = [];
@@ -6,7 +6,6 @@ let activePreviewIndex = 0; // 目前在模擬器預覽的卡片索引
 
 // DOM 元素
 const mdInput = document.getElementById('markdown-input');
-const btnParse = document.getElementById('btn-parse');
 const btnParseAi = document.getElementById('btn-parse-ai');
 const geminiApiKeyInput = document.getElementById('gemini-api-key');
 const geminiModelSelect = document.getElementById('gemini-model-select');
@@ -30,6 +29,11 @@ const simOptionsBack = document.getElementById('sim-options-back');
 const simCorrectAns = document.getElementById('sim-correct-ans');
 const simExplanationBox = document.getElementById('sim-explanation-box');
 const simExplanationContent = document.getElementById('sim-explanation-content');
+const simTip = document.getElementById('sim-tip');
+
+// 模擬器目前顯示中的卡片，以及使用者在正面點選的作答紀錄（用來同步驅動背面的正確/錯誤標色，效果比照真正的 Anki 卡片）
+let activeSimCard = null;
+let simSelectedLetters = [];
 
 // 範例資料 (傳統醫學選擇題 Markdown 格式)
 const sampleMarkdown = `1. 關於冠狀動脈疾病（CAD）的診斷與評估，下列敘述何者錯誤？
@@ -86,22 +90,55 @@ const templates = {
       <div class="option-btn" data-option="F"><span class="prefix">F</span>{{OptionF}}</div>
     {{/OptionF}}
   </div>
-  <div class="tip-text">提示：可在正面點選選項進行標記</div>
+  <div class="tip-text">{{#IsMultiple}}提示：可複選任意數量的選項{{/IsMultiple}}{{^IsMultiple}}提示：點選一個選項進行標記，改選其他選項會自動取代原本的選擇{{/IsMultiple}}</div>
 </div>
 
 <script>
   (function() {
-    var options = document.querySelectorAll('.option-btn');
+    // {{FrontSide}} 會把這段 script 原封不動地嵌入背面模板一次。
+    // 用背面才有的標記元素判斷「現在是不是已經翻到背面了」，
+    // 如果是，就直接跳過，避免重新綁定點擊事件、洗掉使用者原本在正面的作答紀錄。
+    if (document.getElementById('ankigen-answer-marker')) {
+      return;
+    }
+
+    var isMultiple = {{#IsMultiple}}true{{/IsMultiple}}{{^IsMultiple}}false{{/IsMultiple}};
+    var options = Array.prototype.slice.call(document.querySelectorAll('.option-btn'));
+
+    // 每次正面重新顯示（新題目、或按了 Again 重來），都要重置這一題的作答紀錄
+    window.AnkiGenSelected = [];
+
+    function syncSelectedState() {
+      window.AnkiGenSelected = options
+        .filter(function(o) { return o.classList.contains('selected'); })
+        .map(function(o) { return o.getAttribute('data-option'); });
+    }
+
     options.forEach(function(opt) {
       opt.addEventListener('click', function(e) {
         e.stopPropagation(); // 防止觸發 Anki 點擊翻牌
-        opt.classList.toggle('selected');
+
+        if (isMultiple) {
+          // 多選題：每個選項獨立切換，沒有數量限制
+          opt.classList.toggle('selected');
+        } else {
+          // 單選題：藍底同時只能停留在一個選項上，改按其他選項會自動換選
+          var wasSelected = opt.classList.contains('selected');
+          options.forEach(function(o) { o.classList.remove('selected'); });
+          if (!wasSelected) {
+            opt.classList.add('selected');
+          }
+        }
+
+        syncSelectedState();
       });
     });
   })();
 </script>`,
 
   back: `{{FrontSide}}
+
+<div id="ankigen-answer-marker" style="display:none"></div>
 
 <hr id="answer-split">
 
@@ -111,7 +148,7 @@ const templates = {
   </div>
 
   {{#Explanation}}
-    <div class="explanation-box">
+    <div class="explanation-box" id="explanation-box">
       <div class="explanation-title">解析</div>
       <div class="explanation-content">{{Explanation}}</div>
     </div>
@@ -122,7 +159,7 @@ const templates = {
   (function() {
     var answerStr = "{{Answer}}".trim().toUpperCase();
     var options = document.querySelectorAll('.option-btn');
-    
+
     // 解析正確選項列表，例如 "A, B, C" -> ["A", "B", "C"]
     var correctLetters = [];
     for (var i = 0; i < answerStr.length; i++) {
@@ -131,23 +168,36 @@ const templates = {
         correctLetters.push(char);
       }
     }
-    
+
+    // 取得正面階段記錄下來的作答；若使用者完全沒作答就直接翻牌，視為空作答
+    var selectedLetters = window.AnkiGenSelected || [];
+
+    // 完全正確：使用者選的選項和正確答案必須一模一樣（數量與內容都相同）
+    var isFullyCorrect = selectedLetters.length === correctLetters.length &&
+      correctLetters.every(function(l) { return selectedLetters.indexOf(l) !== -1; });
+
     options.forEach(function(opt) {
       var letter = opt.getAttribute('data-option');
       var isCorrect = correctLetters.indexOf(letter) !== -1;
-      var isSelected = opt.classList.contains('selected');
-      
+      var isSelected = selectedLetters.indexOf(letter) !== -1;
+
       if (isCorrect) {
-        // 正確答案永遠標綠
+        // 正確答案永遠標綠，不論使用者是否有選到
         opt.classList.add('correct');
-      } else if (isSelected && !isCorrect) {
-        // 使用者選了但答錯 → 標紅
+      } else if (isSelected) {
+        // 使用者選了但不是正確答案 → 標紅
         opt.classList.add('wrong');
       } else {
         // 未選也不是正確答案 → 淡化
         opt.classList.add('unselected');
       }
     });
+
+    // 解析框依作答結果整體標色：完全正確為綠色，只要有選錯就整體標紅
+    var explanationBox = document.getElementById('explanation-box');
+    if (explanationBox) {
+      explanationBox.classList.add(isFullyCorrect ? 'exp-correct' : 'exp-wrong');
+    }
   })();
 </script>`,
 
@@ -307,8 +357,8 @@ const templates = {
 }
 
 .explanation-box {
-  background-color: #f0f7f1;
-  border-left: 3px solid #34a853;
+  background-color: #f8f9fa;
+  border-left: 3px solid #cccccc;
   border-radius: 0 6px 6px 0;
   padding: 12px;
   margin-top: 15px;
@@ -317,7 +367,7 @@ const templates = {
 .explanation-title {
   font-size: 12px;
   font-weight: bold;
-  color: #34a853;
+  color: #666666;
   margin-bottom: 4px;
 }
 
@@ -325,6 +375,25 @@ const templates = {
   font-size: 13px;
   color: #555555;
   line-height: 1.5;
+}
+
+/* 解析框依作答結果標色：完全正確 → 綠色；有選錯 → 紅色（由背面 script 動態加上對應 class） */
+.explanation-box.exp-correct {
+  background-color: #e6f4ea;
+  border-left-color: #34a853;
+}
+
+.explanation-box.exp-correct .explanation-title {
+  color: #1e7e34;
+}
+
+.explanation-box.exp-wrong {
+  background-color: #fce8e6;
+  border-left-color: #ea4335;
+}
+
+.explanation-box.exp-wrong .explanation-title {
+  color: #c5221f;
 }`
 };
 
@@ -336,7 +405,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('code-css').value = templates.css;
 
   // 綁定事件監聽器
-  btnParse.addEventListener('click', parseInput);
   btnParseAi.addEventListener('click', parseInputWithGemini);
   btnLoadSample.addEventListener('click', loadSample);
   btnClear.addEventListener('click', clearInput);
@@ -690,15 +758,62 @@ window.deleteCardRow = function(index) {
   }
 };
 
+// 將各種常見的數學公式語法統一轉換成 Anki/MathJax 原生可辨識的 \( \) \[ \] 格式
+// 支援：Anki 專屬的 [$]...[/$] [$$]...[/$$]，以及一般 Markdown 常見的 $...$ $$...$$
+// 這樣不論是本地解析或 Gemini AI 解析的內容，模擬器預覽與匯出的 CSV 都能在真正的 Anki 中正確渲染
+function convertMathDelimiters(str) {
+  if (!str) return '';
+  let out = String(str);
+
+  // Anki 專屬語法 -> 標準 MathJax 分隔符號
+  out = out
+    .replace(/\[\$\$\]/g, '\\[')
+    .replace(/\[\/\$\$\]/g, '\\]')
+    .replace(/\[\$\]/g, '\\(')
+    .replace(/\[\/\$\]/g, '\\)');
+
+  // 區塊公式 $$...$$ -> \[...\]（需在行內公式判斷之前處理，避免誤判）
+  out = out.replace(/\$\$([\s\S]+?)\$\$/g, (_m, inner) => `\\[${inner}\\]`);
+
+  // 行內公式 $...$ -> \(...\)，避免誤判金額（如 $100、$5 - $10）：
+  // 開頭 $ 前面不可緊接數字或另一個 $；公式內容頭尾不可為空白；結尾 $ 後面不可緊接數字
+  out = out.replace(/(^|[^$\d])\$([^\s$](?:[^$\n]*[^\s$])?)\$(?!\d)/g, (_m, pre, inner) => `${pre}\\(${inner}\\)`);
+
+  return out;
+}
+
+// 觸發 MathJax 重新渲染模擬器卡片內的數學公式
+function typesetSimulatorMath() {
+  if (window.MathJax && window.MathJax.typesetPromise) {
+    window.MathJax.typesetClear([ankiSimulatorCard]);
+    window.MathJax.typesetPromise([ankiSimulatorCard]).catch((err) => console.error('MathJax 渲染失敗:', err));
+  }
+}
+
+// 取得卡片的選項陣列 (只保留有內容的選項)
+function getCardOptions(card) {
+  return [
+    { letter: 'A', text: card.optionA },
+    { letter: 'B', text: card.optionB },
+    { letter: 'C', text: card.optionC },
+    { letter: 'D', text: card.optionD },
+    { letter: 'E', text: card.optionE },
+    { letter: 'F', text: card.optionF }
+  ].filter(opt => opt.text);
+}
+
 // 更新卡片模擬器畫面
 function updateSimulator(card) {
+  activeSimCard = card;
+  simSelectedLetters = []; // 每次載入（新）卡片都重置作答紀錄，比照 Anki 正面重新顯示時的行為
+
   // 處理題型標籤
   const isMulti = card.isMultiple === 'y';
   const badgeText = isMulti ? '多選題' : '單選題';
-  
+
   simTypeBadge.textContent = badgeText;
   simTypeBadgeBack.textContent = badgeText;
-  
+
   if (isMulti) {
     simTypeBadge.classList.add('multiple');
     simTypeBadgeBack.classList.add('multiple');
@@ -707,68 +822,123 @@ function updateSimulator(card) {
     simTypeBadgeBack.classList.remove('multiple');
   }
 
-  // 題目
-  simQuestion.textContent = card.question;
-  simQuestionBack.textContent = card.question;
+  if (simTip) {
+    simTip.textContent = isMulti
+      ? '提示：可複選任意數量的選項'
+      : '提示：點選一個選項進行標記，改選其他選項會自動取代原本的選擇';
+  }
 
-  // 渲染正面與背面的選項 HTML
+  // 題目（轉換數學公式語法並以 innerHTML 呈現，才能讓 <br> 換行與 MathJax 公式如同 Anki 一樣正確渲染）
+  const questionHTML = convertMathDelimiters(card.question).replace(/\n/g, '<br>');
+  simQuestion.innerHTML = questionHTML;
+  simQuestionBack.innerHTML = questionHTML;
+
+  // 正面：可點選互動，初始一律不帶 selected（全新載入）
   let optionsHTMLFront = '';
-  let optionsHTMLBack = '';
-  
-  const optionsArr = [
-    { letter: 'A', text: card.optionA },
-    { letter: 'B', text: card.optionB },
-    { letter: 'C', text: card.optionC },
-    { letter: 'D', text: card.optionD },
-    { letter: 'E', text: card.optionE },
-    { letter: 'F', text: card.optionF }
-  ];
-
-  // 取得答案字母列表，用於背面高亮
-  const rawAnswerLetters = card.answer.toUpperCase().replace(/[^A-F]/g, '').split('');
-
-  optionsArr.forEach(opt => {
-    if (!opt.text) return; // 空欄位自動隱藏（這是我們設計的重點！）
-
-    // 1. 正面：可點選互動
+  getCardOptions(card).forEach(opt => {
+    const optTextHTML = convertMathDelimiters(opt.text).replace(/\n/g, '<br>');
     optionsHTMLFront += `
       <button class="sim-option-btn" data-letter="${opt.letter}" onclick="toggleOptionSelect(this, event)">
         <span class="sim-option-prefix">${opt.letter}</span>
-        <span class="sim-option-text">${opt.text}</span>
+        <span class="sim-option-text">${optTextHTML}</span>
       </button>
     `;
-
-    // 2. 背面：顯示答案高亮
-    const isCorrect = rawAnswerLetters.includes(opt.letter);
-    const resultClass = isCorrect ? 'correct' : 'wrong';
-    
-    optionsHTMLBack += `
-      <div class="sim-option-btn ${resultClass}" data-letter="${opt.letter}">
-        <span class="sim-option-prefix">${opt.letter}</span>
-        <span class="sim-option-text">${opt.text}</span>
-      </div>
-    `;
   });
-
   simOptionsFront.innerHTML = optionsHTMLFront;
-  simOptionsBack.innerHTML = optionsHTMLBack;
 
   // 正確答案純文字欄位
   simCorrectAns.textContent = card.answer;
 
+  // 背面：依目前作答紀錄渲染高亮（初始為空，僅正確答案標綠，比照 Anki 未作答就翻牌的效果）
+  renderSimBackOptions();
+
   // 解析欄位
   if (card.explanation) {
     simExplanationBox.style.display = 'block';
-    simExplanationContent.textContent = card.explanation;
+    simExplanationContent.innerHTML = convertMathDelimiters(card.explanation).replace(/\n/g, '<br>');
   } else {
     simExplanationBox.style.display = 'none';
   }
+  updateSimExplanationColor();
+
+  // 內容更新完畢後，觸發 MathJax 重新渲染卡片內所有數學公式
+  typesetSimulatorMath();
 }
 
-// 正面選項點選互動 (模擬 Anki 面板功能)
+// 依目前的作答紀錄 (simSelectedLetters) 重新渲染背面選項的顏色狀態
+// 邏輯與匯出的 Anki 模板一致：正確答案永遠標綠；選了但答錯的標紅；其餘淡化
+function renderSimBackOptions() {
+  if (!activeSimCard) return;
+  const card = activeSimCard;
+  const correctLetters = card.answer.toUpperCase().replace(/[^A-F]/g, '').split('');
+
+  let optionsHTMLBack = '';
+  getCardOptions(card).forEach(opt => {
+    const optTextHTML = convertMathDelimiters(opt.text).replace(/\n/g, '<br>');
+    const isCorrect = correctLetters.includes(opt.letter);
+    const isSelected = simSelectedLetters.includes(opt.letter);
+
+    let resultClass;
+    if (isCorrect) {
+      resultClass = 'correct';
+    } else if (isSelected) {
+      resultClass = 'wrong';
+    } else {
+      resultClass = 'unselected';
+    }
+
+    optionsHTMLBack += `
+      <div class="sim-option-btn ${resultClass}" data-letter="${opt.letter}">
+        <span class="sim-option-prefix">${opt.letter}</span>
+        <span class="sim-option-text">${optTextHTML}</span>
+      </div>
+    `;
+  });
+
+  simOptionsBack.innerHTML = optionsHTMLBack;
+}
+
+// 解析框依作答結果整體標色：完全正確為綠色，只要有選錯（或漏選）就整體標紅
+function updateSimExplanationColor() {
+  if (!activeSimCard) return;
+  simExplanationBox.classList.remove('sim-exp-correct', 'sim-exp-wrong');
+  if (!activeSimCard.explanation) return;
+
+  const correctLetters = activeSimCard.answer.toUpperCase().replace(/[^A-F]/g, '').split('');
+  const isFullyCorrect = simSelectedLetters.length === correctLetters.length &&
+    correctLetters.every(l => simSelectedLetters.includes(l));
+
+  simExplanationBox.classList.add(isFullyCorrect ? 'sim-exp-correct' : 'sim-exp-wrong');
+}
+
+// 正面選項點選互動 (模擬 Anki 面板功能：單選題換選、多選題各自獨立切換)
 window.toggleOptionSelect = function(element, event) {
   event.stopPropagation(); // 阻止事件向上傳遞，避免卡片翻轉
-  element.classList.toggle('selected');
+  if (!activeSimCard) return;
+
+  const isMulti = activeSimCard.isMultiple === 'y';
+  const frontOptions = Array.prototype.slice.call(simOptionsFront.querySelectorAll('.sim-option-btn'));
+
+  if (isMulti) {
+    // 多選題：每個選項獨立切換，沒有數量限制
+    element.classList.toggle('selected');
+  } else {
+    // 單選題：藍底同時只能停留在一個選項上，改按其他選項會自動換選
+    const wasSelected = element.classList.contains('selected');
+    frontOptions.forEach(o => o.classList.remove('selected'));
+    if (!wasSelected) {
+      element.classList.add('selected');
+    }
+  }
+
+  simSelectedLetters = frontOptions
+    .filter(o => o.classList.contains('selected'))
+    .map(o => o.getAttribute('data-letter'));
+
+  // 即時同步更新背面（不需等翻牌才計算），讓使用者翻牌時能立刻看到對應結果
+  renderSimBackOptions();
+  updateSimExplanationColor();
+  typesetSimulatorMath();
 };
 
 // 翻轉卡片模擬
@@ -778,18 +948,21 @@ function toggleFlipCard() {
   ankiSimulatorCard.classList.toggle('flipped');
 }
 
-// 匯出 CSV (TSV - Tab 鍵分隔) 檔案供 Anki 匯入
+// 匯出 CSV (逗號分隔，欄位皆加上雙引號) 檔案供 Anki 匯入
 function downloadCSVFile() {
   if (parsedCards.length === 0) return;
-  
+
   const headers = ["Question", "OptionA", "OptionB", "OptionC", "OptionD", "OptionE", "OptionF", "Answer", "IsMultiple", "Explanation"];
-  
+
   let csvContent = "";
-  
-  // 雙引號與 Tab 鍵逃逸處理函數
+
+  // 雙引號與逗號跳脫處理函數
   function escapeField(val) {
     if (val === undefined || val === null) return '""';
     let str = String(val).trim();
+    // 統一數學公式語法為 Anki/MathJax 原生的 \( \) \[ \]，
+    // 不論原始內容是 $...$ $$...$$ 還是 [$]...[/$] [$$]...[/$$]，匯入真正的 Anki 後都能正確渲染
+    str = convertMathDelimiters(str);
     // 雙引號跳脫：Anki 標準為把 double quotes 改成兩個 double quotes
     str = str.replace(/"/g, '""');
     // 將多行換行符轉換成 HTML <br> 標籤，這樣 Anki 才能在一格中顯示換行
@@ -814,7 +987,7 @@ function downloadCSVFile() {
       card.isMultiple,
       card.explanation
     ];
-    csvContent += row.map(escapeField).join('\t') + '\n';
+    csvContent += row.map(escapeField).join(',') + '\n';
   });
 
   // 以 UTF-8 格式下載（加上 BOM 確保 Excel 或 Anki 都能正常讀取中文）
@@ -887,6 +1060,11 @@ async function parseInputWithGemini() {
 - answer: 正確答案英文字母，必須用逗號加空格隔開 (例如: "A" 或 "A, C")
 - isMultiple: 若為多選題填入 "y"，單選題填入 ""
 - explanation: 題目解析內容 (若無則留空)
+
+【數學公式處理規則】非常重要，請務必遵守：
+- 若題目、選項或解析中含有數學公式、化學方程式或任何 LaTeX 語法，請完整保留原始公式內容，不要簡化、省略或轉換成 Unicode 特殊符號（例如不要把 "x^2" 轉成 "x²"、不要把 "\\alpha" 轉成 "α"）。
+- 請統一使用行內公式 \\( ... \\) 或區塊公式 \\[ ... \\] 包裹公式。若原文是用 $...$ 或 $$...$$ 或 [$]...[/$] 等其他寫法，請一併轉換成 \\( ... \\) / \\[ ... \\] 格式後再輸出。
+- 因為輸出必須是合法 JSON，公式中的反斜線 \\ 在 JSON 字串中需正確跳脫為 \\\\，例如公式 \\(x^2\\) 在 JSON 字串內應寫成 "\\\\(x^2\\\\)"。
 
 輸出格式必須是純 JSON 陣列，不要包裹在 \`\`\`json ... \`\`\` 內，必須直接輸出合法的 JSON。
 
@@ -964,7 +1142,7 @@ ${text}`;
 
   } catch (error) {
     console.error(error);
-    alert(`AI 解析失敗：\n${error.message}\n\n請確認您的 API Key 是否正確，或嘗試使用「本地快速解析」。`);
+    alert(`AI 解析失敗：\n${error.message}\n\n請確認您的 API Key 是否正確。`);
   } finally {
     // 恢復按鈕
     btnParseAi.disabled = false;
