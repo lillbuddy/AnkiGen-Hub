@@ -73,7 +73,7 @@ export default function HistoryLayout({ records }: { records: HistoryRecord[] })
           <div className="flex flex-col gap-3">
             {selected.source === 'mcq' &&
               (selected.cards as McqCard[]).map((card, index) => (
-                <McqCardItem key={index} card={card} />
+                <McqCardItem key={index} card={card} recordId={selected.id} cardIndex={index} />
               ))}
             {selected.source === 'slides-mcq' &&
               (selected.cards as SlidesMcqCard[]).map((card, index) => (

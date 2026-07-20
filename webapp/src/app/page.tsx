@@ -62,7 +62,7 @@ export default async function Home({
         </p>
       )}
 
-      <div className="mx-auto mb-10 grid max-w-2xl grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="mx-auto mb-6 grid max-w-2xl grid-cols-1 gap-6 sm:grid-cols-2">
         <Link href="/tools/mcq" className="tool-card">
           <div className="tool-icon">📝</div>
           <h2 className="mb-2 font-display text-lg font-bold text-text-primary">文字選擇題產生器</h2>
@@ -72,27 +72,34 @@ export default async function Home({
           <span className="tool-cta">開始製作 →</span>
         </Link>
 
-        {driveConnected ? (
-          <Link href="/tools/slides" className="tool-card">
-            <div className="tool-icon">🖼️</div>
-            <h2 className="mb-2 font-display text-lg font-bold text-text-primary">圖片標記工具</h2>
-            <p className="flex-1 text-sm text-text-secondary">
-              選取本機圖片並重新命名，接著選擇匯出成選擇題（AI 還能幫你產生誘答性的干擾選項）或 Image Occlusion，存進你自己的
-              Google Drive。
-            </p>
-            <span className="tool-cta">開始標記 →</span>
-          </Link>
-        ) : (
-          <a href="/api/google-drive/connect" className="tool-card">
-            <div className="tool-icon">🔗</div>
-            <h2 className="mb-2 font-display text-lg font-bold text-text-primary">連結 Google Drive</h2>
-            <p className="flex-1 text-sm text-text-secondary">
-              圖片選擇題和 Image Occlusion 這兩個工具需要把圖片存進你自己的 Google Drive，先連結帳號才能使用。
-            </p>
-            <span className="tool-cta">前往連結 →</span>
-          </a>
-        )}
+        <Link href="/tools/slides" className="tool-card">
+          <div className="tool-icon">🖼️</div>
+          <h2 className="mb-2 font-display text-lg font-bold text-text-primary">圖片標記工具</h2>
+          <p className="flex-1 text-sm text-text-secondary">
+            選取本機圖片並重新命名，接著選擇匯出成選擇題（AI 還能幫你產生誘答性的干擾選項）或 Image Occlusion，存進你自己的
+            Google Drive。
+          </p>
+          <span className="tool-cta">開始標記 →</span>
+        </Link>
       </div>
+
+      {!driveConnected && (
+        <div className="mx-auto mb-10 max-w-2xl">
+          <div className="drive-connect-banner">
+            <div className="drive-connect-banner-text">
+              🔗 圖片標記工具需要先連結 Google Drive，圖片才能存到你自己的帳號裡。
+            </div>
+            <div className="drive-connect-banner-actions">
+              <a href="/api/google-drive/connect?reuseLogin=1" className="btn btn-primary btn-sm">
+                使用 {user.email} 連結
+              </a>
+              <a href="/api/google-drive/connect?chooseAccount=1" className="btn btn-secondary btn-sm">
+                使用其他 Google 帳號
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
         <span className="text-text-secondary">

@@ -17,7 +17,17 @@ export async function GET(request: NextRequest) {
   const state = crypto.randomUUID()
   const redirectUri = new URL('/api/google-drive/callback', request.url).toString()
 
-  const response = NextResponse.redirect(buildGoogleAuthUrl(redirectUri, state))
+  // 讓使用者選擇：沿用登入 AnkiGen Hub 用的 email 當作建議帳號（?reuseLogin=1），
+  // 或是強制顯示 Google 的帳號選擇畫面，方便換成別的 Google 帳號（?chooseAccount=1）。
+  const reuseLogin = request.nextUrl.searchParams.get('reuseLogin') === '1'
+  const chooseAccount = request.nextUrl.searchParams.get('chooseAccount') === '1'
+
+  const authUrl = buildGoogleAuthUrl(redirectUri, state, {
+    loginHint: reuseLogin && user.email ? user.email : undefined,
+    forceAccountChooser: chooseAccount,
+  })
+
+  const response = NextResponse.redirect(authUrl)
   response.cookies.set(STATE_COOKIE, state, {
     httpOnly: true,
     // Secure cookie 在非 HTTPS（例如本機 http://localhost）下瀏覽器不會存也不會送出，

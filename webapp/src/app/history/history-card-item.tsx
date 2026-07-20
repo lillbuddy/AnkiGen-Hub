@@ -29,7 +29,11 @@ export default function HistoryCardItem({
       removeFromDrawer(key)
       setInDrawer(false)
     } else {
-      addToDrawer({ ...card, key, sourceRecordId: recordId })
+      const result = addToDrawer({ ...card, key, sourceRecordId: recordId, cardType: 'slides-mcq' })
+      if (!result.ok) {
+        alert(result.reason)
+        return
+      }
       setInDrawer(true)
     }
   }

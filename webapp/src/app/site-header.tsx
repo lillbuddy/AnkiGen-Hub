@@ -12,6 +12,7 @@ export default function SiteHeader() {
   const [user, setUser] = useState<User | null>(null)
   const [ready, setReady] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  const [disconnectingDrive, setDisconnectingDrive] = useState(false)
   const [driveStatus, setDriveStatus] = useState<{ connected: boolean; email: string | null }>({
     connected: false,
     email: null,
@@ -42,14 +43,42 @@ export default function SiteHeader() {
 
   async function handleSignOut() {
     setSigningOut(true)
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
+    try {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      router.push('/login')
+      router.refresh()
+    } finally {
+      // 頁首在 root layout 裡，換頁不會重新掛載，所以一定要自己把狀態重設回來，
+      // 不然下次再登入時，這個按鈕會從一開始就卡在「登出中...」。
+      setSigningOut(false)
+    }
+  }
+
+  async function handleDisconnectDrive() {
+    if (
+      !confirm(
+        '確定要解除連結 Google Drive 嗎？之後要繼續使用圖片標記工具，需要重新連結一次。（已經上傳的圖片還是會留在你自己的 Google Drive 裡，不會被刪除）'
+      )
+    ) {
+      return
+    }
+
+    setDisconnectingDrive(true)
+    const response = await fetch('/api/google-drive/disconnect', { method: 'POST' })
+    setDisconnectingDrive(false)
+
+    if (!response.ok) {
+      alert('解除連結失敗，請稍後再試。')
+      return
+    }
+
+    setDriveStatus({ connected: false, email: null })
     router.refresh()
   }
 
   const isHome = pathname === '/'
-  const isLogin = pathname === '/login'
+  const isLogin = pathname === '/login' || pathname === '/signup'
 
   return (
     <header className="sticky top-0 z-50 border-b border-panel-border bg-white/85 py-3 backdrop-blur-md">
@@ -72,12 +101,15 @@ export default function SiteHeader() {
           {ready && user && (
             <>
               {driveStatus.connected && (
-                <span
+                <button
+                  onClick={handleDisconnectDrive}
+                  disabled={disconnectingDrive}
                   className="drive-status-badge hidden sm:inline-flex"
-                  title="目前連結的 Google Drive 帳號"
+                  title="點擊解除連結 Google Drive"
                 >
-                  📁 {driveStatus.email ?? 'Drive 已連結'}
-                </span>
+                  📁 {disconnectingDrive ? '解除連結中...' : (driveStatus.email ?? 'Drive 已連結')}
+                  <span className="drive-status-badge-remove">✕</span>
+                </button>
               )}
               {!isHome && (
                 <Link href="/" className="nav-link">

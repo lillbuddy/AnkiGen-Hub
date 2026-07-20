@@ -4,20 +4,36 @@
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
+const GOOGLE_REVOKE_URL = 'https://oauth2.googleapis.com/revoke'
 const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
 // email scope 只是為了在頁首顯示「目前連結的是哪個 Google 帳號」，不會拿來做其他用途。
 const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email'
 
-export function buildGoogleAuthUrl(redirectUri: string, state: string) {
+export function buildGoogleAuthUrl(
+  redirectUri: string,
+  state: string,
+  options: { loginHint?: string; forceAccountChooser?: boolean } = {}
+) {
+  // prompt 可以放多個值（空格分隔）：consent 是為了每次都拿到 refresh_token，
+  // select_account 是強制 Google 顯示帳號選擇畫面（使用者想換一個帳號連結時用）。
+  const prompt = options.forceAccountChooser ? 'select_account consent' : 'consent'
+
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
     redirect_uri: redirectUri,
     response_type: 'code',
     scope: SCOPES,
     access_type: 'offline', // 沒有這個拿不到 refresh_token
-    prompt: 'consent', // 沒有這個，非第一次授權時 Google 不會再給 refresh_token
+    prompt,
     state,
   })
+
+  // login_hint 只是「建議」Google 預先選取這個帳號（例如使用者登入 AnkiGen Hub 用的 email），
+  // 使用者在畫面上還是可以自己換成別的 Google 帳號，不是強制鎖定。
+  if (options.loginHint) {
+    params.set('login_hint', options.loginHint)
+  }
+
   return `${GOOGLE_AUTH_URL}?${params.toString()}`
 }
 
@@ -84,4 +100,18 @@ export async function refreshAccessToken(refreshToken: string) {
   }
 
   return (await response.json()) as GoogleTokenResponse
+}
+
+// 解除連結時呼叫，把 refresh_token 交還給 Google 撤銷，這樣使用者的 Google 帳號
+// 「已連結的應用程式」清單裡也會確實移除這個授權，而不是只有我們自己的資料庫忘記它。
+// 這是盡力而為：token 可能早就失效了，撤銷失敗也不擋使用者解除連結（本地紀錄還是會刪除）。
+export async function revokeGoogleToken(token: string): Promise<void> {
+  try {
+    await fetch(`${GOOGLE_REVOKE_URL}?token=${encodeURIComponent(token)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    })
+  } catch (error) {
+    console.error('[google-drive] 撤銷 token 失敗（忽略，繼續刪除本地連結紀錄）', error)
+  }
 }

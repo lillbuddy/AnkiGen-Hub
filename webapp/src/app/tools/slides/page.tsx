@@ -100,7 +100,9 @@ export default function SlidesWizardPage() {
     const params = new URLSearchParams(window.location.search)
     if (params.get('from') !== 'drawer') return
 
-    const drawerCards = getDrawerCards()
+    // 抽屜同一時間只會裝一種類型的卡片，這裡只認圖片選擇題（slides-mcq），
+    // 防呆用：理論上抽屜不會混到文字選擇題卡片，但還是明確篩選一次比較保險。
+    const drawerCards = getDrawerCards().filter((c) => c.cardType === 'slides-mcq')
     if (drawerCards.length === 0) return
 
     // 同上：window.location 和抽屜的 localStorage 都只在瀏覽器端讀得到，故意等 mount 後才讀。
@@ -136,6 +138,14 @@ export default function SlidesWizardPage() {
   const activeImage = images.find((img) => img.localId === effectiveActiveId) ?? null
   const dupes = getDuplicateFilenameSet(images)
   const includedImages = images.filter((img) => img.included)
+
+  // 從抽屜沿用的卡片，img.url 平常指向縮圖用的壓縮預覽圖（給步驟一的小格子、表格縮圖用，
+  // 載入快就好）；但放進模擬器裡顯示時看得比較明顯，改用原始檔案，畫質才不會比新選的
+  // 圖片明顯差一截。新選的圖片本來就還沒壓縮，url 已經是原始檔案，不用特別處理。
+  const simulatorCard =
+    activeImage && activeImage.kind === 'reused' && activeImage.driveFileId
+      ? { ...activeImage, url: `/api/google-drive/image/${activeImage.driveFileId}` }
+      : activeImage
 
   function updateImage(localId: string, patch: Partial<SlideImage>) {
     setImages((prev) => prev.map((img) => (img.localId === localId ? { ...img, ...patch } : img)))
@@ -689,7 +699,7 @@ export default function SlidesWizardPage() {
                                       onClick={() => setActiveId(img.localId)}
                                       className="btn btn-secondary btn-xs"
                                     >
-                                      ✏️ 編輯
+                                      編輯
                                     </button>
                                     <button
                                       onClick={() => removeImage(img.localId)}
@@ -809,7 +819,7 @@ export default function SlidesWizardPage() {
             </section>
 
             <section className="panel-right">
-              <SlidesSimulator key={`${effectiveActiveId}-${mode}`} mode={mode} card={activeImage} />
+              <SlidesSimulator key={`${effectiveActiveId}-${mode}`} mode={mode} card={simulatorCard} />
 
               {mode === 'mcq' ? (
                 <div className="mt-4">

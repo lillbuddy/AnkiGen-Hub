@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Script from 'next/script'
 import { buildMcqCsv, downloadCsv } from '@/lib/export-csv'
+import { clearDrawer, getDrawerCards } from '@/lib/drawer-storage'
 import { callGeminiJson } from '@/lib/gemini-client'
 import type { McqCard } from '@/lib/history-types'
 import AnkiSimulator from './anki-simulator'
@@ -97,6 +98,36 @@ export default function McqToolPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
   const [previewIndex, setPreviewIndex] = useState(0)
+  const [fromDrawer, setFromDrawer] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('from') !== 'drawer') return
+
+    // 抽屜同一時間只會裝一種類型的卡片，這裡只認文字選擇題（mcq），防呆用。
+    const drawerCards = getDrawerCards().filter((c) => c.cardType === 'mcq')
+    if (drawerCards.length === 0) return
+
+    // 同上：window.location 和抽屜的 localStorage 都只在瀏覽器端讀得到，故意等 mount 後才讀。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFromDrawer(true)
+    setCards(
+      drawerCards.map((c) =>
+        makeCardState({
+          questionText: c.questionText,
+          optionA: c.optionA,
+          optionB: c.optionB,
+          optionC: c.optionC,
+          optionD: c.optionD,
+          optionE: c.optionE,
+          optionF: c.optionF,
+          answer: c.answer,
+          isMultiple: c.isMultiple,
+          notes: c.notes,
+        })
+      )
+    )
+  }, [])
 
   async function handleParse() {
     if (!apiKey.trim()) {
@@ -174,9 +205,11 @@ export default function McqToolPage() {
         setMessage({ type: 'error', text: data.error ?? '存入歷史紀錄失敗' })
         return
       }
+      if (fromDrawer) clearDrawer()
       setMessage({ type: 'ok', text: '已成功存入歷史紀錄！' })
       setCards([])
       setPurpose('')
+      setFromDrawer(false)
     } catch (error) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : String(error) })
     } finally {
@@ -274,6 +307,13 @@ D. 第一心音會變弱
               </div>
             </div>
             <div className="panel-body">
+              {fromDrawer && (
+                <div className="notice-box mb-3">
+                  <div>
+                    已經從抽屜載入 {cards.length} 張卡片。如果想幫這份卡組再補充新的題目，可以貼上文字內容重新解析，新解析出來的卡片會加進下面的列表一起處理。
+                  </div>
+                </div>
+              )}
               <input
                 placeholder="這批卡片是為了什麼而做的？（選填，存入紀錄時會用到）"
                 value={purpose}
