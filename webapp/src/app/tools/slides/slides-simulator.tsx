@@ -9,6 +9,10 @@ const OPTION_KEYS = ['optionA', 'optionB', 'optionC', 'optionD', 'optionE', 'opt
 
 export interface SlideSimCard {
   url: string
+  // 沿用抽屜卡片時，url 會指向畫質較好的原始檔案；如果那個檔案剛好讀不到
+  // （例如很久以前的舊資料、原始檔已經不在了），圖片載入失敗時會自動改用這個
+  // 保底網址（通常是縮圖用的預覽檔），至少讓圖片顯示得出來，不會整張變問號。
+  fallbackUrl?: string
   filename: string
   questionText: string
   optionA: string
@@ -146,7 +150,7 @@ function McqFront({
       <div
         className="sim-question"
         dangerouslySetInnerHTML={{
-          __html: `<img src="${card.url}"><br>${renderMath(card.questionText)}`,
+          __html: `<img src="${card.url}" onerror="this.onerror=null;this.src='${card.fallbackUrl ?? card.url}'"><br>${renderMath(card.questionText)}`,
         }}
       />
       <div className="sim-options-list">
@@ -194,7 +198,7 @@ function McqBack({ card, selected }: { card: SlideSimCard; selected: string[] })
       <div
         className="sim-question"
         dangerouslySetInnerHTML={{
-          __html: `<img src="${card.url}"><br>${renderMath(card.questionText)}`,
+          __html: `<img src="${card.url}" onerror="this.onerror=null;this.src='${card.fallbackUrl ?? card.url}'"><br>${renderMath(card.questionText)}`,
         }}
       />
       <div className="sim-options-list">
@@ -239,7 +243,15 @@ function OcclusionFront({ card }: { card: SlideSimCard }) {
       </div>
       <div className="occlusion-image-wrap">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={card.url} alt="" />
+        <img
+          src={card.url}
+          alt=""
+          onError={(e) => {
+            if (card.fallbackUrl && e.currentTarget.src !== card.fallbackUrl) {
+              e.currentTarget.src = card.fallbackUrl
+            }
+          }}
+        />
       </div>
       <div className="sim-question">{stripExtension(card.filename)}</div>
       <div className="sim-tip">提示：遮蓋範圍需要匯入 Anki 後手動框選，這裡只預覽圖片與標題是否正確</div>
@@ -256,7 +268,15 @@ function OcclusionBack({ card }: { card: SlideSimCard }) {
       </div>
       <div className="occlusion-image-wrap">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={card.url} alt="" />
+        <img
+          src={card.url}
+          alt=""
+          onError={(e) => {
+            if (card.fallbackUrl && e.currentTarget.src !== card.fallbackUrl) {
+              e.currentTarget.src = card.fallbackUrl
+            }
+          }}
+        />
       </div>
       <div className="sim-question">{stripExtension(card.filename)}</div>
       {card.notes && (

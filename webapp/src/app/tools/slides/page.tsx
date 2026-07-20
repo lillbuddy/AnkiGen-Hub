@@ -142,9 +142,15 @@ export default function SlidesWizardPage() {
   // 從抽屜沿用的卡片，img.url 平常指向縮圖用的壓縮預覽圖（給步驟一的小格子、表格縮圖用，
   // 載入快就好）；但放進模擬器裡顯示時看得比較明顯，改用原始檔案，畫質才不會比新選的
   // 圖片明顯差一截。新選的圖片本來就還沒壓縮，url 已經是原始檔案，不用特別處理。
+  // fallbackUrl 保留原本的縮圖網址：萬一原始檔案讀不到（例如很久以前的舊資料），
+  // 模擬器裡的 <img> 會自動改用這個保底網址，不會直接顯示破圖。
   const simulatorCard =
     activeImage && activeImage.kind === 'reused' && activeImage.driveFileId
-      ? { ...activeImage, url: `/api/google-drive/image/${activeImage.driveFileId}` }
+      ? {
+          ...activeImage,
+          url: `/api/google-drive/image/${activeImage.driveFileId}`,
+          fallbackUrl: activeImage.url,
+        }
       : activeImage
 
   function updateImage(localId: string, patch: Partial<SlideImage>) {
