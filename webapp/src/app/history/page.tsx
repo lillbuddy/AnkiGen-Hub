@@ -1,14 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { SOURCE_LABELS, type HistoryRecord } from '@/lib/history-types'
-import DeleteHistoryButton from './delete-history-button'
-import DownloadCsvButton from './download-csv-button'
-
-function formatDate(isoString: string) {
-  const d = new Date(isoString)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
+import { type HistoryRecord } from '@/lib/history-types'
+import HistoryLayout from './history-layout'
 
 export default async function HistoryPage() {
   const supabase = await createClient()
@@ -35,42 +28,9 @@ export default async function HistoryPage() {
     .returns<HistoryRecord[]>()
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
+    <main className="mx-auto w-full max-w-6xl flex-1 p-6">
       <h1 className="mb-4 text-xl font-semibold">歷史紀錄</h1>
-
-      {(!records || records.length === 0) && (
-        <p className="text-sm text-text-secondary">目前還沒有任何歷史紀錄。</p>
-      )}
-
-      <div className="flex flex-col gap-3">
-        {records?.map((record) => (
-          <div
-            key={record.id}
-            className="flex items-center justify-between card-panel p-3"
-          >
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="rounded bg-gray-100 px-2 py-0.5 text-xs">
-                  {SOURCE_LABELS[record.source] ?? record.source}
-                </span>
-                <span className="text-xs text-text-secondary">{formatDate(record.created_at)}</span>
-              </div>
-              <div className="mt-1 text-sm">{record.purpose?.trim() || '（無備註）'}</div>
-              <div className="text-xs text-text-secondary">{record.card_count} 張卡片</div>
-            </div>
-            <div className="flex gap-2">
-              <Link
-                href={`/history/${record.id}`}
-                className="btn btn-secondary btn-sm"
-              >
-                查看
-              </Link>
-              <DownloadCsvButton source={record.source} cards={record.cards} />
-              <DeleteHistoryButton recordId={record.id} />
-            </div>
-          </div>
-        ))}
-      </div>
+      <HistoryLayout records={records ?? []} />
     </main>
   )
 }

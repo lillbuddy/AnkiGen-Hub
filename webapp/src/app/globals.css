@@ -864,6 +864,71 @@ body {
     white-space: nowrap;
   }
 
+  /* 抽屜浮動按鈕（右下角），沿用類似手機 App 的「圖示 + 數量徽章」浮動操作鈕設計 */
+  .drawer-fab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 50;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35), 0 2px 6px rgba(15, 23, 42, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .drawer-fab:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4), 0 3px 8px rgba(15, 23, 42, 0.2);
+  }
+
+  .drawer-fab-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background-color: var(--color-danger);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffffff;
+  }
+
+  /* 歷史紀錄頁面：左側列表項目 */
+  .history-list-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .history-list-item:hover {
+    background-color: var(--color-subtle);
+    border-color: #cbd5e1;
+  }
+
+  .history-list-item-active {
+    background-color: rgba(37, 99, 235, 0.06);
+    border-color: var(--color-primary);
+  }
+
   /* 提示卡片，各頁共用 */
   .notice-box {
     display: flex;

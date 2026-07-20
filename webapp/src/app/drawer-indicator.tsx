@@ -21,11 +21,9 @@ export default function DrawerIndicator() {
   if (count === 0) return null
 
   return (
-    <Link
-      href="/drawer"
-      className="fixed bottom-4 right-4 z-50 rounded-full btn btn-primary shadow-lg"
-    >
-      🗂️ 抽屜（{count}）
+    <Link href="/drawer" className="drawer-fab" title={`抽屜：目前收集了 ${count} 張卡片`}>
+      🗄️
+      <span className="drawer-fab-badge">{count}</span>
     </Link>
   )
 }
