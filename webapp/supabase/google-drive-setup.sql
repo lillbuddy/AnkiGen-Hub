@@ -7,6 +7,7 @@ create table if not exists public.google_drive_connections (
   user_id uuid primary key references auth.users(id) on delete cascade,
   refresh_token text not null,
   folder_id text,
+  drive_email text,
   connected_at timestamptz not null default now()
 );
 

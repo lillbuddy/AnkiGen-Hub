@@ -828,25 +828,40 @@ body {
     display: block;
   }
 
-  /* 頁首右側的導覽連結（回首頁、歷史紀錄），沿用舊版 style.css 的 .nav-home-link 設計 */
+  /* 頁首右側的導覽連結（回首頁、歷史紀錄） */
   .nav-link {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--color-accent);
+    color: var(--color-text-primary);
     text-decoration: none;
     font-weight: 600;
     font-size: 13px;
     padding: 6px 12px;
     border-radius: 8px;
-    border: 1px solid transparent;
+    border: 1px solid var(--color-panel-border);
     white-space: nowrap;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   }
 
   .nav-link:hover {
-    background-color: var(--color-accent-light);
-    border-color: rgba(14, 165, 233, 0.3);
+    background-color: var(--color-subtle);
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+  }
+
+  /* 頁首右上角顯示已連結的 Google Drive 帳號 */
+  .drive-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    padding: 6px 10px;
+    border-radius: 8px;
+    background-color: var(--color-subtle);
+    border: 1px solid var(--color-panel-border);
+    white-space: nowrap;
   }
 
   /* 提示卡片，各頁共用 */

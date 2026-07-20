@@ -4,19 +4,36 @@
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
+const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
+// email scope 只是為了在頁首顯示「目前連結的是哪個 Google 帳號」，不會拿來做其他用途。
+const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email'
 
 export function buildGoogleAuthUrl(redirectUri: string, state: string) {
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: DRIVE_SCOPE,
+    scope: SCOPES,
     access_type: 'offline', // 沒有這個拿不到 refresh_token
     prompt: 'consent', // 沒有這個，非第一次授權時 Google 不會再給 refresh_token
     state,
   })
   return `${GOOGLE_AUTH_URL}?${params.toString()}`
+}
+
+// 用剛拿到的 access_token 問 Google「這是哪個帳號」，只在連結當下呼叫一次，
+// 拿到的 email 存進 google_drive_connections，之後純粹用來顯示，不影響 Drive 讀寫本身。
+export async function fetchGoogleAccountEmail(accessToken: string): Promise<string | null> {
+  try {
+    const response = await fetch(GOOGLE_USERINFO_URL, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    if (!response.ok) return null
+    const data = (await response.json()) as { email?: string }
+    return data.email ?? null
+  } catch {
+    return null
+  }
 }
 
 interface GoogleTokenResponse {

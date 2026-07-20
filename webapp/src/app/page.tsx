@@ -98,16 +98,6 @@ export default async function Home({
         <span className="text-text-secondary">
           已登入：<span className="font-mono">{user.email}</span>
         </span>
-        {driveConnected && (
-          <a
-            href="/api/google-drive/test"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline"
-          >
-            測試 Google Drive 讀寫
-          </a>
-        )}
       </div>
     </main>
   )

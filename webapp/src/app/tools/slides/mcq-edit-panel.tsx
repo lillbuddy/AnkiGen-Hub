@@ -45,7 +45,7 @@ export default function McqEditPanel({
       <label className="field-label">提問文字</label>
       <textarea
         className="cell-input"
-        rows={4}
+        rows={2}
         value={card.questionText}
         onChange={(e) => onUpdate({ questionText: e.target.value })}
       />

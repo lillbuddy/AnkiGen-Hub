@@ -12,6 +12,10 @@ export default function SiteHeader() {
   const [user, setUser] = useState<User | null>(null)
   const [ready, setReady] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  const [driveStatus, setDriveStatus] = useState<{ connected: boolean; email: string | null }>({
+    connected: false,
+    email: null,
+  })
 
   useEffect(() => {
     const supabase = createClient()
@@ -27,6 +31,14 @@ export default function SiteHeader() {
 
     return () => subscription.subscription.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    // 未登入時 API 本身就會回傳 connected: false，不需要另外特判，避免在 effect 裡同步呼叫 setState。
+    fetch('/api/google-drive/status')
+      .then((res) => res.json())
+      .then((data) => setDriveStatus(data))
+      .catch(() => setDriveStatus({ connected: false, email: null }))
+  }, [user])
 
   async function handleSignOut() {
     setSigningOut(true)
@@ -59,6 +71,14 @@ export default function SiteHeader() {
         <nav className="flex items-center gap-2">
           {ready && user && (
             <>
+              {driveStatus.connected && (
+                <span
+                  className="drive-status-badge hidden sm:inline-flex"
+                  title="目前連結的 Google Drive 帳號"
+                >
+                  📁 {driveStatus.email ?? 'Drive 已連結'}
+                </span>
+              )}
               {!isHome && (
                 <Link href="/" className="nav-link">
                   🏠 回首頁
