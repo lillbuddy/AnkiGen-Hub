@@ -545,7 +545,7 @@ export default function SlidesWizardPage() {
 
       {step === 'export' && (
         <>
-          <div className="wizard-nav mt-0 mb-3">
+          <div className="wizard-nav mt-0 mb-3 flex justify-end">
             <button onClick={() => setStep('label')} className="btn btn-secondary btn-sm">
               ← 上一步：繼續標記圖片
             </button>
