@@ -104,9 +104,10 @@ export default function SlidesWizardPage() {
     if (drawerCards.length === 0) return
 
     // 同上：window.location 和抽屜的 localStorage 都只在瀏覽器端讀得到，故意等 mount 後才讀。
+    // 故意停在步驟一（而不是直接跳到匯出設定），讓使用者檢視完抽屜裡沿用的卡片後，
+    // 還可以在同一個地方直接補選新的照片，一起納入這次的匯出批次。
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setFromDrawer(true)
-    setStep('export')
     setImages(
       drawerCards.map((c) => ({
         localId: crypto.randomUUID(),
@@ -459,6 +460,13 @@ export default function SlidesWizardPage() {
               <p className="instruction-text">
                 選取本機的圖片檔案（可一次選取多張）。所有圖片只會留在你的瀏覽器分頁內處理。
               </p>
+              {fromDrawer && (
+                <div className="notice-box">
+                  <div>
+                    已經從抽屜載入 {images.length} 張卡片。如果檢視完之後想幫這份卡組再補充新的照片，直接在下面選取新圖片即可，會跟抽屜裡的卡片一起納入這次的匯出。
+                  </div>
+                </div>
+              )}
               <div
                 className={`slide-dropzone ${dragOver ? 'drag-over' : ''}`}
                 onClick={(e) => {
