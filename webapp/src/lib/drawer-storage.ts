@@ -43,6 +43,12 @@ export function removeFromDrawer(key: string) {
   writeAll(readAll().filter((c) => c.key !== key))
 }
 
+// 直接在抽屜頁面修改卡片內容（題目、選項等），只影響暫存在抽屜裡的這份副本，
+// 不會動到原本歷史紀錄裡的資料。
+export function updateDrawerCard(key: string, patch: Partial<DrawerCard>) {
+  writeAll(readAll().map((c) => (c.key === key ? { ...c, ...patch } : c)))
+}
+
 export function clearDrawer() {
   writeAll([])
 }

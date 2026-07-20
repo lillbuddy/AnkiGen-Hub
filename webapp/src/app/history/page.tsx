@@ -28,7 +28,7 @@ export default async function HistoryPage() {
     .returns<HistoryRecord[]>()
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 p-6">
+    <main className="w-full flex-1 px-6 py-6 sm:px-10">
       <h1 className="mb-4 text-xl font-semibold">歷史紀錄</h1>
       <HistoryLayout records={records ?? []} />
     </main>
