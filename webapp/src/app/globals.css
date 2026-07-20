@@ -94,15 +94,25 @@ body {
     font-weight: 600;
     font-size: 14px;
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: 9px;
     border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
   }
 
   .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none !important;
+  }
+
+  .btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-accent-light);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
   }
 
   .btn-sm {
@@ -115,13 +125,22 @@ body {
     font-size: 11px;
   }
 
+  .btn-lg {
+    padding: 11px 22px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
   .btn-primary {
     background-color: var(--color-primary);
     color: #ffffff;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.15), 0 4px 10px rgba(37, 99, 235, 0.18);
   }
 
   .btn-primary:hover:not(:disabled) {
     background-color: var(--color-primary-hover);
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.18), 0 6px 16px rgba(37, 99, 235, 0.24);
+    transform: translateY(-1px);
   }
 
   .btn-secondary {
@@ -132,15 +151,20 @@ body {
 
   .btn-secondary:hover:not(:disabled) {
     background-color: var(--color-subtle);
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
   }
 
   .btn-success {
     background-color: var(--color-success);
     color: #ffffff;
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.15), 0 4px 10px rgba(22, 163, 74, 0.18);
   }
 
   .btn-success:hover:not(:disabled) {
     background-color: var(--color-success-hover);
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.18), 0 6px 16px rgba(22, 163, 74, 0.24);
+    transform: translateY(-1px);
   }
 
   .btn-danger-outline {
@@ -151,6 +175,7 @@ body {
 
   .btn-danger-outline:hover:not(:disabled) {
     background-color: rgba(220, 38, 38, 0.08);
+    border-color: var(--color-danger);
   }
 
   /* 表單輸入框 */
@@ -206,6 +231,11 @@ body {
     justify-content: center;
     font-size: 22px;
     margin-bottom: 16px;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .tool-card:hover .tool-icon {
+    transform: scale(1.08) rotate(-4deg);
   }
 
   .tool-cta {
@@ -216,6 +246,7 @@ body {
     font-size: 14px;
     font-weight: 600;
     color: var(--color-primary);
+    transition: gap 0.2s ease;
   }
 
   .tool-card:hover .tool-cta {
@@ -510,5 +541,325 @@ body {
     padding: 15px;
     outline: none;
     resize: vertical;
+  }
+
+  /* 圖片標記工具的兩步驟精靈頁面，沿用舊版 slides.html/slides.css 的設計 */
+  .wizard-single-col {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 0 24px;
+  }
+
+  .wizard-nav {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .slide-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 2px dashed var(--color-panel-border);
+    border-radius: 14px;
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--color-text-secondary);
+    background-color: var(--color-subtle);
+    transition: all 0.2s ease;
+    margin-bottom: 15px;
+  }
+
+  .slide-dropzone.drag-over {
+    border-color: var(--color-primary);
+    background-color: rgba(37, 99, 235, 0.06);
+  }
+
+  .slide-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .slide-card {
+    border: 1px solid var(--color-panel-border);
+    border-radius: 14px;
+    background-color: var(--color-subtle);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s ease;
+  }
+
+  .slide-card.slide-card-excluded {
+    opacity: 0.5;
+  }
+
+  .slide-card.slide-card-active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+
+  .slide-thumb-wrap {
+    width: 100%;
+    height: 130px;
+    background-color: var(--color-panel-border);
+    overflow: hidden;
+  }
+
+  .slide-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .slide-fields {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-label {
+    display: block;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+
+  .field-label:first-child {
+    margin-top: 0;
+  }
+
+  .slide-filename-input-error {
+    border-color: var(--color-danger) !important;
+    background-color: rgba(220, 38, 38, 0.08);
+  }
+
+  .slide-filename-warning {
+    font-size: 11px;
+    color: var(--color-danger);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .slide-card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-top: 1px solid var(--color-panel-border);
+  }
+
+  .slide-include-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+  }
+
+  .mode-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--color-panel-border);
+  }
+
+  .mode-tab-btn {
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 10px 16px;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+  }
+
+  .mode-tab-btn:hover {
+    color: var(--color-text-primary);
+  }
+
+  .mode-tab-btn.active {
+    color: var(--color-primary);
+  }
+
+  .mode-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--color-primary);
+  }
+
+  .field-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .field-row label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .field-row-inline {
+    display: flex;
+    gap: 10px;
+  }
+
+  .field-row-inline .cell-input {
+    flex-grow: 1;
+  }
+
+  .field-hint {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .mcq-table-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+  }
+
+  .sim-question img {
+    display: block;
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 8px;
+    background-color: var(--color-subtle);
+    margin-bottom: 10px;
+  }
+
+  .mcq-edit-panel {
+    background-color: var(--color-subtle);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 15px;
+  }
+
+  .mcq-edit-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .mcq-edit-thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background-color: var(--color-panel-border);
+  }
+
+  .mcq-edit-filename {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    word-break: break-all;
+  }
+
+  .mcq-edit-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+
+  .mcq-edit-options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .mcq-edit-opt-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mcq-edit-opt-wrap .cell-input {
+    flex-grow: 1;
+  }
+
+  .compact-question-preview {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .occlusion-image-wrap {
+    position: relative;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--color-subtle);
+    margin-bottom: 16px;
+  }
+
+  .occlusion-image-wrap img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* 頁首右側的導覽連結（回首頁、歷史紀錄），沿用舊版 style.css 的 .nav-home-link 設計 */
+  .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .nav-link:hover {
+    background-color: var(--color-accent-light);
+    border-color: rgba(14, 165, 233, 0.3);
+  }
+
+  /* 提示卡片，各頁共用 */
+  .notice-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background-color: var(--color-accent-light);
+    border: 1px solid rgba(14, 165, 233, 0.25);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
   }
 }

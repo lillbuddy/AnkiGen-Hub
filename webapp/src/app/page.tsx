@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import SignOutButton from './sign-out-button'
 
 const DRIVE_ERROR_MESSAGES: Record<string, string> = {
   access_denied: '你取消了 Google 的授權。',
@@ -63,7 +62,7 @@ export default async function Home({
         </p>
       )}
 
-      <div className="mb-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mx-auto mb-10 grid max-w-2xl grid-cols-1 gap-6 sm:grid-cols-2">
         <Link href="/tools/mcq" className="tool-card">
           <div className="tool-icon">📝</div>
           <h2 className="mb-2 font-display text-lg font-bold text-text-primary">文字選擇題產生器</h2>
@@ -74,25 +73,15 @@ export default async function Home({
         </Link>
 
         {driveConnected ? (
-          <>
-            <Link href="/tools/image-mcq" className="tool-card">
-              <div className="tool-icon">🖼️</div>
-              <h2 className="mb-2 font-display text-lg font-bold text-text-primary">圖片選擇題工具</h2>
-              <p className="flex-1 text-sm text-text-secondary">
-                選取本機圖片，標上題目、選項、答案，AI 還能幫你產生誘答性的干擾選項，存進你自己的 Google Drive。
-              </p>
-              <span className="tool-cta">開始標記 →</span>
-            </Link>
-
-            <Link href="/tools/image-occlusion" className="tool-card">
-              <div className="tool-icon">✂️</div>
-              <h2 className="mb-2 font-display text-lg font-bold text-text-primary">Image Occlusion 工具</h2>
-              <p className="flex-1 text-sm text-text-secondary">
-                準備圖片和備註，匯出成 Anki 內建 Image Occlusion 筆記類型的 CSV，之後在 Anki 裡手動框選遮蓋範圍。
-              </p>
-              <span className="tool-cta">開始標記 →</span>
-            </Link>
-          </>
+          <Link href="/tools/slides" className="tool-card">
+            <div className="tool-icon">🖼️</div>
+            <h2 className="mb-2 font-display text-lg font-bold text-text-primary">圖片標記工具</h2>
+            <p className="flex-1 text-sm text-text-secondary">
+              選取本機圖片並重新命名，接著選擇匯出成選擇題（AI 還能幫你產生誘答性的干擾選項）或 Image Occlusion，存進你自己的
+              Google Drive。
+            </p>
+            <span className="tool-cta">開始標記 →</span>
+          </Link>
         ) : (
           <a href="/api/google-drive/connect" className="tool-card">
             <div className="tool-icon">🔗</div>
@@ -105,26 +94,20 @@ export default async function Home({
         )}
       </div>
 
-      <div className="card-panel flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
-        <div className="flex flex-wrap items-center gap-4">
-          <span className="text-text-secondary">
-            已登入：<span className="font-mono">{user.email}</span>
-          </span>
-          <Link href="/history" className="text-primary underline">
-            歷史紀錄
-          </Link>
-          {driveConnected && (
-            <a
-              href="/api/google-drive/test"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline"
-            >
-              測試 Google Drive 讀寫
-            </a>
-          )}
-        </div>
-        <SignOutButton />
+      <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+        <span className="text-text-secondary">
+          已登入：<span className="font-mono">{user.email}</span>
+        </span>
+        {driveConnected && (
+          <a
+            href="/api/google-drive/test"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline"
+          >
+            測試 Google Drive 讀寫
+          </a>
+        )}
       </div>
     </main>
   )

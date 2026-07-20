@@ -7,6 +7,10 @@ import { getOrCreateAppFolderId } from '@/lib/google-drive/app-folder'
 interface CardMeta {
   filename: string
   notes: string
+  // 這兩個欄位有值的話，代表是從抽屜沿用的舊卡片（圖片選擇題用的圖片），圖片已經在 Drive 上了，
+  // 不用再上傳，直接沿用這兩個 ID。
+  driveFileId?: string
+  drivePreviewFileId?: string
 }
 
 function getExtension(filename: string) {
@@ -75,6 +79,15 @@ export async function POST(request: Request) {
 
     const cards = await Promise.all(
       metaList.map(async (meta, i) => {
+        if (meta.driveFileId && meta.drivePreviewFileId) {
+          return {
+            filename: meta.filename,
+            driveFileId: meta.driveFileId,
+            drivePreviewFileId: meta.drivePreviewFileId,
+            notes: meta.notes,
+          }
+        }
+
         const original = formData.get(`original_${i}`)
         const preview = formData.get(`preview_${i}`)
 

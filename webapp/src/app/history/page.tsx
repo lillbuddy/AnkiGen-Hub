@@ -36,12 +36,7 @@ export default async function HistoryPage() {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">歷史紀錄</h1>
-        <Link href="/" className="text-sm text-primary underline">
-          回首頁
-        </Link>
-      </div>
+      <h1 className="mb-4 text-xl font-semibold">歷史紀錄</h1>
 
       {(!records || records.length === 0) && (
         <p className="text-sm text-text-secondary">目前還沒有任何歷史紀錄。</p>

@@ -57,7 +57,7 @@ export default function DrawerPage() {
           </div>
 
           <Link
-            href="/tools/image-mcq?from=drawer"
+            href="/tools/slides?from=drawer"
             className="mt-4 inline-block btn btn-primary"
           >
             開始整理（{cards.length} 張卡片）
