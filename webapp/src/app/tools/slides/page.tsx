@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'r
 import Link from 'next/link'
 import Script from 'next/script'
 import { createPreviewBlob } from '@/lib/create-preview-blob'
-import { clearDrawer, getDrawerCards } from '@/lib/drawer-storage'
+import { clearDrawer, getDrawerCards, syncDrawerOwner } from '@/lib/drawer-storage'
 import { useCurrentUser } from '@/lib/use-current-user'
 import { getSavedGeminiApiKey, saveGeminiApiKey } from '@/lib/gemini-key-storage'
 import { callGeminiJson } from '@/lib/gemini-client'
@@ -108,6 +108,7 @@ export default function SlidesWizardPage() {
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
   const lastSavedMcqSignatureRef = useRef<string | null>(null)
   const lastSavedOcclusionSignatureRef = useRef<string | null>(null)
+  const hasLoadedFromDrawerRef = useRef(false)
 
   const [apiKey, setApiKey] = useState('')
   const [model, setModel] = useState('gemini-3.5-flash')
@@ -123,9 +124,18 @@ export default function SlidesWizardPage() {
   }, [])
 
   useEffect(() => {
+    // 用 ref 確保這段「從抽屜載入」的邏輯只在 userReady 第一次變成 true 時執行一次，
+    // 不會因為之後 user 物件參照變動（例如 token 自動刷新）又重新觸發、蓋掉使用者
+    // 已經在編輯的內容。
+    if (!userReady || hasLoadedFromDrawerRef.current) return
+    hasLoadedFromDrawerRef.current = true
+
     const params = new URLSearchParams(window.location.search)
     if (params.get('from') !== 'drawer') return
 
+    // 先確認抽屜還是不是屬於目前這個使用者，再讀取內容，避免看到上一個
+    // 使用者留下的卡片。
+    syncDrawerOwner(user?.id ?? null)
     // 抽屜同一時間只會裝一種類型的卡片，這裡只認圖片選擇題（slides-mcq），
     // 防呆用：理論上抽屜不會混到文字選擇題卡片，但還是明確篩選一次比較保險。
     const drawerCards = getDrawerCards().filter((c) => c.cardType === 'slides-mcq')
@@ -158,7 +168,7 @@ export default function SlidesWizardPage() {
         drivePreviewFileId: c.drivePreviewFileId,
       }))
     )
-  }, [])
+  }, [userReady, user])
 
   const effectiveActiveId = activeId ?? images[0]?.localId ?? null
   const activeImage = images.find((img) => img.localId === effectiveActiveId) ?? null

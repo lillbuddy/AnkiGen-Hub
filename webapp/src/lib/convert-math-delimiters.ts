@@ -25,3 +25,24 @@ export function convertMathDelimiters(text: string): string {
 
   return out
 }
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+// 兩個「Anki 效果即時模擬器」（anki-simulator.tsx、slides-simulator.tsx）都是用
+// dangerouslySetInnerHTML 顯示卡片內容（題目、選項、備註），這些文字來自 AI 解析
+// 結果或使用者直接編輯，一定要先跳脫 HTML 特殊字元再轉換數學公式分隔符號，
+// 不然打進 <script>、<img onerror=...> 這種內容會被當成真正的 HTML 執行，變成
+// 儲存型 XSS，可能被用來偷瀏覽器 localStorage 裡存的 Gemini API Key。
+// 跳脫用的字元（&<>"'）跟數學分隔符號用的字元（$[]\()）完全不重疊，所以
+// escapeHtml 在 convertMathDelimiters 前後執行結果一樣，不會互相干擾。
+export function renderCardHtml(text: string): string {
+  if (!text) return ''
+  return convertMathDelimiters(escapeHtml(String(text))).replace(/\n/g, '<br>')
+}

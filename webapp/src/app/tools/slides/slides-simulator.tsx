@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { convertMathDelimiters } from '@/lib/convert-math-delimiters'
+import { renderCardHtml } from '@/lib/convert-math-delimiters'
 import { stripExtension } from '@/lib/slide-filename'
 import '../mcq/anki-simulator.css'
 
@@ -24,10 +24,6 @@ export interface SlideSimCard {
   answer: string
   isMultiple: boolean
   notes: string
-}
-
-function renderMath(text: string) {
-  return convertMathDelimiters(text).replace(/\n/g, '<br>')
 }
 
 declare global {
@@ -150,7 +146,7 @@ function McqFront({
       <div
         className="sim-question"
         dangerouslySetInnerHTML={{
-          __html: `<img src="${card.url}" onerror="this.onerror=null;this.src='${card.fallbackUrl ?? card.url}'"><br>${renderMath(card.questionText)}`,
+          __html: `<img src="${card.url}" onerror="this.onerror=null;this.src='${card.fallbackUrl ?? card.url}'"><br>${renderCardHtml(card.questionText)}`,
         }}
       />
       <div className="sim-options-list">
@@ -163,7 +159,7 @@ function McqFront({
             <span className="sim-option-prefix">{opt.letter}</span>
             <span
               className="sim-option-text"
-              dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }}
+              dangerouslySetInnerHTML={{ __html: renderCardHtml(opt.text) }}
             />
           </button>
         ))}
@@ -198,7 +194,7 @@ function McqBack({ card, selected }: { card: SlideSimCard; selected: string[] })
       <div
         className="sim-question"
         dangerouslySetInnerHTML={{
-          __html: `<img src="${card.url}" onerror="this.onerror=null;this.src='${card.fallbackUrl ?? card.url}'"><br>${renderMath(card.questionText)}`,
+          __html: `<img src="${card.url}" onerror="this.onerror=null;this.src='${card.fallbackUrl ?? card.url}'"><br>${renderCardHtml(card.questionText)}`,
         }}
       />
       <div className="sim-options-list">
@@ -211,7 +207,7 @@ function McqBack({ card, selected }: { card: SlideSimCard; selected: string[] })
               <span className="sim-option-prefix">{opt.letter}</span>
               <span
                 className="sim-option-text"
-                dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }}
+                dangerouslySetInnerHTML={{ __html: renderCardHtml(opt.text) }}
               />
             </div>
           )
@@ -226,7 +222,7 @@ function McqBack({ card, selected }: { card: SlideSimCard; selected: string[] })
           <div className="sim-explanation-title">解析</div>
           <div
             className="sim-explanation-content"
-            dangerouslySetInnerHTML={{ __html: renderMath(card.notes) }}
+            dangerouslySetInnerHTML={{ __html: renderCardHtml(card.notes) }}
           />
         </div>
       )}

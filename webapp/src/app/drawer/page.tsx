@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   getDrawerCards,
   removeFromDrawer,
+  syncDrawerOwner,
   updateDrawerCard,
   type AnyDrawerCard,
   type ImageDrawerCard,
@@ -20,10 +21,13 @@ export default function DrawerPage() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
 
   useEffect(() => {
-    // localStorage 只存在瀏覽器端，故意等 mount 後才讀，避免 SSR 輸出跟 client 端內容對不上。
+    if (!userReady) return
+    // 先確認抽屜還是不是屬於目前這個使用者（同一台裝置換人登入/登出時會清空），
+    // 再讀取內容，避免看到上一個使用者留下的卡片。
+    syncDrawerOwner(user?.id ?? null)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCards(getDrawerCards())
-  }, [])
+  }, [userReady, user])
 
   // 抽屜內容是本機 localStorage，不是跟帳號綁定的資料，同一台裝置換人登入就可能
   // 看到上一個使用者留下的卡片，所以沒登入時直接不顯示內容，避免隱私外洩。

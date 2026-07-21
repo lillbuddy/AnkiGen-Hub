@@ -1,15 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { convertMathDelimiters } from '@/lib/convert-math-delimiters'
+import { renderCardHtml } from '@/lib/convert-math-delimiters'
 import type { McqCard } from '@/lib/history-types'
 import './anki-simulator.css'
 
 const OPTION_KEYS = ['optionA', 'optionB', 'optionC', 'optionD', 'optionE', 'optionF'] as const
-
-function renderMath(text: string) {
-  return convertMathDelimiters(text).replace(/\n/g, '<br>')
-}
 
 declare global {
   interface Window {
@@ -104,7 +100,7 @@ export default function AnkiSimulator({ card }: { card: McqCard | null }) {
             </div>
             <div
               className="sim-question"
-              dangerouslySetInnerHTML={{ __html: renderMath(card.questionText) }}
+              dangerouslySetInnerHTML={{ __html: renderCardHtml(card.questionText) }}
             />
             <div className="sim-options-list">
               {options.map((opt) => (
@@ -116,7 +112,7 @@ export default function AnkiSimulator({ card }: { card: McqCard | null }) {
                   <span className="sim-option-prefix">{opt.letter}</span>
                   <span
                     className="sim-option-text"
-                    dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }}
+                    dangerouslySetInnerHTML={{ __html: renderCardHtml(opt.text) }}
                   />
                 </button>
               ))}
@@ -138,7 +134,7 @@ export default function AnkiSimulator({ card }: { card: McqCard | null }) {
             </div>
             <div
               className="sim-question"
-              dangerouslySetInnerHTML={{ __html: renderMath(card.questionText) }}
+              dangerouslySetInnerHTML={{ __html: renderCardHtml(card.questionText) }}
             />
             <div className="sim-options-list">
               {options.map((opt) => {
@@ -150,7 +146,7 @@ export default function AnkiSimulator({ card }: { card: McqCard | null }) {
                     <span className="sim-option-prefix">{opt.letter}</span>
                     <span
                       className="sim-option-text"
-                      dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }}
+                      dangerouslySetInnerHTML={{ __html: renderCardHtml(opt.text) }}
                     />
                   </div>
                 )
@@ -165,7 +161,7 @@ export default function AnkiSimulator({ card }: { card: McqCard | null }) {
                 <div className="sim-explanation-title">解析</div>
                 <div
                   className="sim-explanation-content"
-                  dangerouslySetInnerHTML={{ __html: renderMath(card.notes) }}
+                  dangerouslySetInnerHTML={{ __html: renderCardHtml(card.notes) }}
                 />
               </div>
             )}

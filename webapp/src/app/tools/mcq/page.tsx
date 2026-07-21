@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Script from 'next/script'
 import { buildMcqCsv, downloadCsv } from '@/lib/export-csv'
-import { clearDrawer, getDrawerCards } from '@/lib/drawer-storage'
+import { clearDrawer, getDrawerCards, syncDrawerOwner } from '@/lib/drawer-storage'
 import { useCurrentUser } from '@/lib/use-current-user'
 import { getSavedGeminiApiKey, saveGeminiApiKey } from '@/lib/gemini-key-storage'
 import { callGeminiJson } from '@/lib/gemini-client'
@@ -106,6 +106,7 @@ export default function McqToolPage() {
   const [previewIndex, setPreviewIndex] = useState(0)
   const [fromDrawer, setFromDrawer] = useState(false)
   const lastSavedSignatureRef = useRef<string | null>(null)
+  const hasLoadedFromDrawerRef = useRef(false)
 
   useEffect(() => {
     // localStorage 只在瀏覽器端讀得到，故意等 mount 後才讀，讓使用者用過一次的
@@ -115,9 +116,18 @@ export default function McqToolPage() {
   }, [])
 
   useEffect(() => {
+    // 用 ref 確保這段「從抽屜載入」的邏輯只在 userReady 第一次變成 true 時執行一次，
+    // 不會因為之後 user 物件參照變動（例如 token 自動刷新）又重新觸發、蓋掉使用者
+    // 已經在編輯的內容。
+    if (!userReady || hasLoadedFromDrawerRef.current) return
+    hasLoadedFromDrawerRef.current = true
+
     const params = new URLSearchParams(window.location.search)
     if (params.get('from') !== 'drawer') return
 
+    // 先確認抽屜還是不是屬於目前這個使用者，再讀取內容，避免看到上一個
+    // 使用者留下的卡片。
+    syncDrawerOwner(user?.id ?? null)
     // 抽屜同一時間只會裝一種類型的卡片，這裡只認文字選擇題（mcq），防呆用。
     const drawerCards = getDrawerCards().filter((c) => c.cardType === 'mcq')
     if (drawerCards.length === 0) return
@@ -141,7 +151,7 @@ export default function McqToolPage() {
         })
       )
     )
-  }, [])
+  }, [userReady, user])
 
   async function handleParse() {
     if (!apiKey.trim()) {

@@ -31,6 +31,7 @@ export async function DELETE(
     .from('history_records')
     .select('id, cards')
     .eq('id', id)
+    .eq('user_id', user.id)
     .maybeSingle<Pick<HistoryRecord, 'id' | 'cards'>>()
 
   if (!record) {
@@ -90,7 +91,11 @@ export async function DELETE(
     }
   }
 
-  const { error: deleteError } = await supabase.from('history_records').delete().eq('id', id)
+  const { error: deleteError } = await supabase
+    .from('history_records')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
 
   if (deleteError) {
     console.error('[history delete] 刪除資料庫紀錄失敗', deleteError)

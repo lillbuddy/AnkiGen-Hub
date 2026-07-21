@@ -7,6 +7,7 @@
 import type { McqCard, SlidesMcqCard } from '@/lib/history-types'
 
 const STORAGE_KEY = 'ankigen_drawer_v1'
+const OWNER_KEY = 'ankigen_drawer_owner_v1'
 
 export type DrawerCardType = 'slides-mcq' | 'mcq'
 
@@ -89,4 +90,28 @@ export function updateDrawerCard(key: string, patch: Partial<ImageDrawerCard> | 
 
 export function clearDrawer() {
   writeAll([])
+}
+
+// 抽屜存在 localStorage，不是跟帳號綁定的資料庫紀錄，同一台裝置換人登入
+// （或登出）時，如果不特別處理，下一個使用者會直接看到上一個人抽屜裡的卡片。
+// 每個會讀取抽屜內容的地方（抽屜頁面、浮動按鈕、工具頁面的「從抽屜載入」）
+// 都應該在讀取前先呼叫這個函式：如果記錄的擁有者跟目前登入的使用者對不上
+// （換人登入、登出、或第一次有人登入），就直接清空舊資料，重新認領擁有者。
+// 呼叫多次是安全的——擁有者一致時什麼都不會做。
+export function syncDrawerOwner(userId: string | null): void {
+  if (typeof window === 'undefined') return
+  try {
+    const storedOwner = window.localStorage.getItem(OWNER_KEY)
+    if (storedOwner === userId) return
+
+    window.localStorage.removeItem(STORAGE_KEY)
+    if (userId) {
+      window.localStorage.setItem(OWNER_KEY, userId)
+    } else {
+      window.localStorage.removeItem(OWNER_KEY)
+    }
+    window.dispatchEvent(new Event('ankigen-drawer-changed'))
+  } catch {
+    // localStorage 不可用時就算了，不影響本次操作。
+  }
 }

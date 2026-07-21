@@ -2,16 +2,25 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getDrawerCards } from '@/lib/drawer-storage'
+import { getDrawerCards, syncDrawerOwner } from '@/lib/drawer-storage'
 import { useCurrentUser } from '@/lib/use-current-user'
 
 export default function DrawerIndicator() {
-  const { user } = useCurrentUser()
+  const { user, ready } = useCurrentUser()
   const [count, setCount] = useState(0)
 
   useEffect(() => {
+    if (!ready) return
+    // 同一台裝置換人登入或登出時，先確認抽屜還是不是屬於目前這個使用者，
+    // 不是的話直接清空，不會讓下一個使用者看到上一個人抽屜裡的卡片。
+    syncDrawerOwner(user?.id ?? null)
+    // localStorage 只在瀏覽器端讀得到，故意等 ready 之後才讀。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCount(getDrawerCards().length)
+  }, [ready, user])
+
+  useEffect(() => {
     const update = () => setCount(getDrawerCards().length)
-    update()
     window.addEventListener('ankigen-drawer-changed', update)
     window.addEventListener('storage', update) // 跨分頁同步
     return () => {
