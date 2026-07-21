@@ -34,7 +34,11 @@ export default function DrawerIndicator() {
   if (!user || count === 0) return null
 
   return (
-    <Link href="/drawer" className="drawer-fab" title={`抽屜：目前收集了 ${count} 張卡片`}>
+    <Link
+      href="/drawer"
+      className="drawer-fab"
+      title={`抽屜：從歷史紀錄挑選想沿用的卡片，暫存在這裡，之後可以一次拿去繼續編輯、整理成新的卡組。目前收集了 ${count} 張卡片。`}
+    >
       🗄️
       <span className="drawer-fab-badge">{count}</span>
     </Link>
