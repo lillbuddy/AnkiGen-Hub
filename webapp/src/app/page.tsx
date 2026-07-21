@@ -30,20 +30,6 @@ export default async function Home({
     driveConnected = !!data
   }
 
-  if (!user) {
-    return (
-      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col items-center justify-center p-6">
-        <div className="card-panel flex w-full flex-col items-center gap-4 p-8 text-center">
-          <h1 className="font-display text-xl font-bold text-text-primary">AnkiGen Hub</h1>
-          <p className="text-sm text-text-secondary">尚未登入</p>
-          <Link href="/login" className="btn btn-primary w-full">
-            前往登入
-          </Link>
-        </div>
-      </main>
-    )
-  }
-
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <div className="mb-10 text-center">
@@ -76,18 +62,18 @@ export default async function Home({
           <div className="tool-icon">🖼️</div>
           <h2 className="mb-2 font-display text-lg font-bold text-text-primary">圖片標記工具</h2>
           <p className="flex-1 text-sm text-text-secondary">
-            選取本機圖片並重新命名，接著選擇匯出成選擇題（AI 還能幫你產生誘答性的干擾選項）或 Image Occlusion，存進你自己的
-            Google Drive。
+            選取本機圖片並重新命名，接著選擇匯出成選擇題（AI 還能幫你產生誘答性的干擾選項）或 Image
+            Occlusion，下載 CSV 或直接存入 Anki。
           </p>
           <span className="tool-cta">開始標記 →</span>
         </Link>
       </div>
 
-      {!driveConnected && (
+      {user && !driveConnected && (
         <div className="mx-auto mb-10 max-w-2xl">
           <div className="drive-connect-banner">
             <div className="drive-connect-banner-text">
-              🔗 圖片標記工具需要先連結 Google Drive，圖片才能存到你自己的帳號裡。
+              🔗 想把卡組存進「歷史紀錄」方便之後查找嗎？連結 Google Drive 後，圖片標記工具就能把圖片存到你自己的帳號裡。
             </div>
             <div className="drive-connect-banner-actions">
               <a href="/api/google-drive/connect?reuseLogin=1" className="btn btn-primary btn-sm">
@@ -102,9 +88,26 @@ export default async function Home({
       )}
 
       <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-        <span className="text-text-secondary">
-          已登入：<span className="font-mono">{user.email}</span>
-        </span>
+        {user ? (
+          <span className="text-text-secondary">
+            已登入：<span className="font-mono">{user.email}</span>
+          </span>
+        ) : (
+          <div className="card-panel flex flex-col items-center gap-3 p-6 text-center">
+            <p className="text-sm text-text-secondary">
+              免登入即可使用上方工具產生卡片、下載 CSV 或直接存入 Anki。想把卡組存進「歷史紀錄」方便之後查找、或串接
+              Google Drive 保存圖片，才需要登入。
+            </p>
+            <div className="flex gap-2">
+              <Link href="/login" className="btn btn-primary btn-sm">
+                登入
+              </Link>
+              <Link href="/signup" className="btn btn-secondary btn-sm">
+                註冊帳號
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   )

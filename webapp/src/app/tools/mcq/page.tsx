@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import Script from 'next/script'
 import { buildMcqCsv, downloadCsv } from '@/lib/export-csv'
 import { clearDrawer, getDrawerCards } from '@/lib/drawer-storage'
+import { useCurrentUser } from '@/lib/use-current-user'
 import { getSavedGeminiApiKey, saveGeminiApiKey } from '@/lib/gemini-key-storage'
 import { callGeminiJson } from '@/lib/gemini-client'
 import type { McqCard } from '@/lib/history-types'
@@ -92,6 +94,7 @@ function makeCardState(card: Partial<McqCard> = {}): CardState {
 }
 
 export default function McqToolPage() {
+  const { user, ready: userReady } = useCurrentUser()
   const [apiKey, setApiKey] = useState('')
   const [model, setModel] = useState('gemini-3.5-flash')
   const [sourceText, setSourceText] = useState('')
@@ -331,8 +334,13 @@ D. 第一心音會變弱
                 className="field-input mb-3"
               />
               <div className="row-actions mb-3">
-                <button onClick={handleSave} disabled={saving} className="btn btn-secondary btn-sm">
-                  {saving ? '存入中...' : '🔖 存入紀錄'}
+                <button
+                  onClick={handleSave}
+                  disabled={saving || (userReady && !user)}
+                  title={userReady && !user ? '登入後才能存入歷史紀錄' : undefined}
+                  className="btn btn-secondary btn-sm"
+                >
+                  {saving ? '存入中...' : userReady && !user ? '🔒 存入紀錄' : '🔖 存入紀錄'}
                 </button>
                 <button onClick={handleDownloadCsv} className="btn btn-success btn-sm">
                   📄 匯出 CSV
@@ -342,6 +350,14 @@ D. 第一心音會變弱
                   defaultDeckName={purpose || 'AnkiGen Hub'}
                 />
               </div>
+              {userReady && !user && (
+                <p className="mb-3 text-xs text-text-secondary">
+                  🔒 登入後可以把這份卡組存入歷史紀錄。{' '}
+                  <Link href="/login" className="font-semibold text-accent">
+                    前往登入
+                  </Link>
+                </p>
+              )}
               <div className="table-container">
                 <table className="editable-table">
                   <thead>

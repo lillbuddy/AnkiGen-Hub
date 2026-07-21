@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState, type ChangeEvent, type DragEvent } from 'react'
+import Link from 'next/link'
 import Script from 'next/script'
 import { createPreviewBlob } from '@/lib/create-preview-blob'
 import { clearDrawer, getDrawerCards } from '@/lib/drawer-storage'
+import { useCurrentUser } from '@/lib/use-current-user'
 import { getSavedGeminiApiKey, saveGeminiApiKey } from '@/lib/gemini-key-storage'
 import { callGeminiJson } from '@/lib/gemini-client'
 import { buildDistractorPrompt, getGlossaryPoolExcluding, parseGlossaryMarkdown } from '@/lib/glossary'
@@ -81,6 +83,7 @@ function getDuplicateFilenameSet(imgs: SlideImage[]): Set<string> {
 }
 
 export default function SlidesWizardPage() {
+  const { user, ready: userReady } = useCurrentUser()
   const [step, setStep] = useState<'label' | 'export'>('label')
   const [mode, setMode] = useState<'mcq' | 'occlusion'>('mcq')
   const [images, setImages] = useState<SlideImage[]>([])
@@ -777,8 +780,13 @@ export default function SlidesWizardPage() {
                             : ''}
                         </span>
                         <div className="row-actions">
-                          <button onClick={handleSaveMcq} disabled={saving} className="btn btn-secondary">
-                            🔖 {saving ? '存入中...' : '存入紀錄'}
+                          <button
+                            onClick={handleSaveMcq}
+                            disabled={saving || (userReady && !user)}
+                            title={userReady && !user ? '登入後才能存入歷史紀錄' : undefined}
+                            className="btn btn-secondary"
+                          >
+                            {userReady && !user ? '🔒' : '🔖'} {saving ? '存入中...' : '存入紀錄'}
                           </button>
                           <button onClick={handleDownloadMcqCsv} className="btn btn-success">
                             📄 匯出 Anki 匯入檔 (CSV)
@@ -790,6 +798,14 @@ export default function SlidesWizardPage() {
                           />
                         </div>
                       </div>
+                      {userReady && !user && (
+                        <p className="mt-2 text-xs text-text-secondary">
+                          🔒 登入後可以把這份卡組存入歷史紀錄。{' '}
+                          <Link href="/login" className="font-semibold text-accent">
+                            前往登入
+                          </Link>
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -847,14 +863,27 @@ export default function SlidesWizardPage() {
                           {includedImages.length === 0 ? '先選取圖片並勾選納入匯出，這裡就會自動整理。' : ''}
                         </span>
                         <div className="row-actions">
-                          <button onClick={handleSaveOcclusion} disabled={saving} className="btn btn-secondary">
-                            🔖 {saving ? '存入中...' : '存入紀錄'}
+                          <button
+                            onClick={handleSaveOcclusion}
+                            disabled={saving || (userReady && !user)}
+                            title={userReady && !user ? '登入後才能存入歷史紀錄' : undefined}
+                            className="btn btn-secondary"
+                          >
+                            {userReady && !user ? '🔒' : '🔖'} {saving ? '存入中...' : '存入紀錄'}
                           </button>
                           <button onClick={handleDownloadOcclusionCsv} className="btn btn-success">
                             📄 匯出 Image Occlusion 匯入檔 (CSV)
                           </button>
                         </div>
                       </div>
+                      {userReady && !user && (
+                        <p className="mt-2 text-xs text-text-secondary">
+                          🔒 登入後可以把這份卡組存入歷史紀錄。{' '}
+                          <Link href="/login" className="font-semibold text-accent">
+                            前往登入
+                          </Link>
+                        </p>
+                      )}
                       <p className="mt-2 text-xs text-text-secondary">
                         Image Occlusion 需要在 Anki 裡手動畫遮蓋範圍，暫不支援直接存入 Anki，請用上面的 CSV +
                         圖片。
