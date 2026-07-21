@@ -52,9 +52,11 @@ export default function SaveToAnkiButton({
       setMessage({
         type: 'error',
         text:
-          check.reason === 'unreachable'
-            ? `偵測不到本機 Anki，可能原因：(1) Anki 沒開啟，或還沒安裝 AnkiConnect 附加元件（工具 > 附加元件 > 瀏覽並安裝，代碼輸入 2055492159）；(2) AnkiConnect 的網址白名單沒有把這個網站加進去——請到 Anki 的「工具 > 附加元件」，點選 AnkiConnect 後按「Config」，把 "webCorsOriginList" 這個欄位加上 "${origin}"（或先用 "*" 測試看看，能連上之後再改回只列出你實際會用到的網址比較安全），存檔後完全關閉並重新開啟 Anki 再試一次。`
-            : '請先在 Anki 跳出的視窗裡按下允許存取，然後再按一次「存入 Anki」。',
+          check.reason === 'safari-mixed-content'
+            ? 'Safari 瀏覽器的安全機制（混合內容限制）不允許這個網站直接連到本機的 Anki，這是瀏覽器本身的限制，AnkiConnect 設定再怎麼調整也沒辦法繞過。請改用 Chrome 開啟本網站使用「存入 Anki」，或是改用「匯出 CSV」搭配 Anki 手動匯入。'
+            : check.reason === 'unreachable'
+              ? `偵測不到本機 Anki，可能原因：(1) Anki 沒開啟，或還沒安裝 AnkiConnect 附加元件（工具 > 附加元件 > 瀏覽並安裝，代碼輸入 2055492159）；(2) AnkiConnect 的網址白名單沒有把這個網站加進去——請到 Anki 的「工具 > 附加元件」，點選 AnkiConnect 後按「Config」，把 "webCorsOriginList" 這個欄位加上 "${origin}"（或先用 "*" 測試看看，能連上之後再改回只列出你實際會用到的網址比較安全），存檔後完全關閉並重新開啟 Anki 再試一次。`
+              : '請先在 Anki 跳出的視窗裡按下允許存取，然後再按一次「存入 Anki」。',
       })
       return
     }

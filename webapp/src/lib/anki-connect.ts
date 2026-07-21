@@ -16,12 +16,27 @@ function getClient() {
 
 export type AnkiConnectCheckResult =
   | { ok: true }
-  | { ok: false; reason: 'unreachable' | 'denied' }
+  | { ok: false; reason: 'unreachable' | 'denied' | 'safari-mixed-content' }
+
+// Safari（跟 Chrome 不同）沒有把 loopback 位址（127.0.0.1/localhost）排除在「混合
+// 內容」限制之外：HTTPS 頁面呼叫 http://127.0.0.1:8765 會直接被瀏覽器擋下、連請求
+// 都送不出去，而且沒有任何網站端設定可以繞過（這是瀏覽器本身的安全機制）。用
+// User-Agent 判斷 Safari 雖然不是最嚴謹的方式，但這裡只是用來提早給使用者正確的
+// 說明，避免使用者照著「偵測不到本機 Anki」的一般排查步驟去改 AnkiConnect 設定，
+// 卻怎麼調都沒用。
+function isSafari(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+}
 
 // 應該是每次「存入 Anki」流程第一步呼叫的動作：確認本機 Anki 有開、AnkiConnect
 // 有裝，而且這個網站的來源已經被允許存取（第一次呼叫時 Anki 會跳出視窗問使用者
 // 要不要同意，同意後 AnkiConnect 會記住這個來源，之後不用再問）。
 export async function checkAnkiConnectAndRequestPermission(): Promise<AnkiConnectCheckResult> {
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && isSafari()) {
+    return { ok: false, reason: 'safari-mixed-content' }
+  }
+
   try {
     const result = await getClient().miscellaneous.requestPermission()
     return result.permission === 'granted' ? { ok: true } : { ok: false, reason: 'denied' }
