@@ -31,7 +31,7 @@ export default async function Home({
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12">
       <div className="mb-10 text-center">
         <h1 className="mb-3 font-display text-3xl font-extrabold tracking-tight text-text-primary">
           把讀書筆記與圖片，變成 Anki 卡片
@@ -93,7 +93,7 @@ export default async function Home({
             已登入：<span className="font-mono">{user.email}</span>
           </span>
         ) : (
-          <div className="card-panel flex flex-col items-center gap-3 p-6 text-center">
+          <div className="card-panel flex w-full flex-col items-center gap-3 p-6 text-center">
             <p className="text-sm text-text-secondary">
               免登入即可使用上方工具產生卡片、下載 CSV 或直接存入 Anki。想把卡組存進「歷史紀錄」方便之後查找、或串接
               Google Drive 保存圖片，才需要登入。
