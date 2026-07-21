@@ -8,8 +8,10 @@ import {
   type OcclusionCard,
   type SlidesMcqCard,
 } from '@/lib/history-types'
+import { fetchImageAsBase64, type AnkiCardInput } from '@/lib/anki-connect'
 import DeleteHistoryButton from './delete-history-button'
 import DownloadCsvButton from './download-csv-button'
+import SaveToAnkiButton from '@/components/save-to-anki-button'
 import McqCardItem from './mcq-card-item'
 import HistoryCardItem from './history-card-item'
 import OcclusionCardItem from './occlusion-card-item'
@@ -29,6 +31,30 @@ export default function HistoryLayout({ records }: { records: HistoryRecord[] })
 
   if (records.length === 0) {
     return <p className="text-sm text-text-secondary">目前還沒有任何歷史紀錄。</p>
+  }
+
+  // 圖片卡的原始圖片還在 Google Drive 上，要透過我們自己的同源 proxy route 抓
+  // bytes（沒有 CORS 問題），轉成 base64 才能交給 AnkiConnect；文字卡不需要圖片。
+  async function getAnkiCardsForSelected(): Promise<AnkiCardInput[]> {
+    if (!selected) return []
+
+    if (selected.source === 'mcq') {
+      return (selected.cards as McqCard[]).map((card) => ({ ...card }))
+    }
+
+    if (selected.source === 'slides-mcq') {
+      return Promise.all(
+        (selected.cards as SlidesMcqCard[]).map(async (card) => ({
+          ...card,
+          image: {
+            filename: card.filename,
+            base64: await fetchImageAsBase64(`/api/google-drive/image/${card.driveFileId}`),
+          },
+        }))
+      )
+    }
+
+    return []
   }
 
   return (
@@ -66,9 +92,22 @@ export default function HistoryLayout({ records }: { records: HistoryRecord[] })
             </div>
             <div className="flex items-center gap-2">
               <DownloadCsvButton source={selected.source} cards={selected.cards} />
+              {(selected.source === 'mcq' || selected.source === 'slides-mcq') && (
+                <SaveToAnkiButton
+                  getCards={getAnkiCardsForSelected}
+                  defaultDeckName={selected.purpose?.trim() || 'AnkiGen Hub'}
+                />
+              )}
               <DeleteHistoryButton recordId={selected.id} />
             </div>
           </div>
+
+          {selected.source === 'slides-occlusion' && (
+            <p className="mb-3 text-xs text-text-secondary">
+              Image Occlusion 需要在 Anki 裡手動畫遮蓋範圍，暫不支援直接存入 Anki，請用下方每張卡片的下載連結
+              + CSV。
+            </p>
+          )}
 
           <div className="flex flex-col gap-3">
             {selected.source === 'mcq' &&

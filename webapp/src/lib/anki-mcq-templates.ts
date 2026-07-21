@@ -3,6 +3,10 @@
 // 不是給這個網站自己渲染用的，所以照舊版 app.js 的內容原封不動搬過來，不要因為在寫 React
 // 就順手「改良」這些字串——改了 Anki 就看不懂了。
 
+// 「手動複製模板程式碼建立筆記類型」和「用 AnkiConnect 自動建立」這兩條路徑，
+// 共用同一個筆記類型名稱，才不會在使用者的 Anki 裡變成兩個重複的筆記類型。
+export const ANKI_MODEL_NAME = 'AnkiGen Hub 選擇題'
+
 export const ANKI_FIELDS = [
   { name: 'Question', desc: '存放題目內容' },
   { name: 'OptionA', desc: '選項 A 內容' },

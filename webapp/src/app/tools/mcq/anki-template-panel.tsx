@@ -6,6 +6,7 @@ import {
   ANKI_CSS_TEMPLATE,
   ANKI_FIELDS,
   ANKI_FRONT_TEMPLATE,
+  ANKI_MODEL_NAME,
 } from '@/lib/anki-mcq-templates'
 
 const TABS = [
@@ -67,7 +68,9 @@ export default function AnkiTemplatePanel() {
         {tab === 'fields' && (
           <div>
             <p className="tab-intro">
-              在 Anki 新增卡片類型 (Note Type) 時，請建立且精確命名以下 10 個欄位：
+              在 Anki 新增卡片類型 (Note Type) 時，建議命名為 <code>{ANKI_MODEL_NAME}</code>
+              （跟「存入 Anki」按鈕自動建立的名稱一致，之後才會被視為同一個筆記類型），並建立且精確命名以下 10
+              個欄位：
             </p>
             <div className="fields-list">
               {ANKI_FIELDS.map((f) => (

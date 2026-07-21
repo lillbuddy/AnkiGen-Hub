@@ -9,10 +9,10 @@
    直接寫在 @theme 底下（不是 @theme inline），Tailwind 才會自動生成
    bg-primary、text-accent、border-panel-border 這類 utility class。 */
 @theme {
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-accent: #0ea5e9;
-  --color-accent-light: #0ea5e91a;
+  --color-primary: #3B6FC4;
+  --color-primary-hover: #14284A;
+  --color-accent: #14284A;
+  --color-accent-light: #14284A1a;
   --color-success: #16a34a;
   --color-success-hover: #15803d;
   --color-danger: #dc2626;
@@ -55,13 +55,13 @@ body {
 }
 
 .bg-glow-1 {
-  background: rgba(37, 99, 235, 0.15);
+  background: rgba(59, 111, 196, 0.15);
   top: -200px;
   right: -100px;
 }
 
 .bg-glow-2 {
-  background: rgba(14, 165, 233, 0.12);
+  background: rgba(20, 40, 74, 0.12);
   bottom: 100px;
   left: -150px;
 }
@@ -134,12 +134,12 @@ body {
   .btn-primary {
     background-color: var(--color-primary);
     color: #ffffff;
-    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.15), 0 4px 10px rgba(37, 99, 235, 0.18);
+    box-shadow: 0 1px 2px rgba(59, 111, 196, 0.15), 0 4px 10px rgba(59, 111, 196, 0.18);
   }
 
   .btn-primary:hover:not(:disabled) {
     background-color: var(--color-primary-hover);
-    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.18), 0 6px 16px rgba(37, 99, 235, 0.24);
+    box-shadow: 0 2px 4px rgba(59, 111, 196, 0.18), 0 6px 16px rgba(59, 111, 196, 0.24);
     transform: translateY(-1px);
   }
 
@@ -224,7 +224,7 @@ body {
     width: 52px;
     height: 52px;
     border-radius: 12px;
-    background-color: rgba(37, 99, 235, 0.1);
+    background-color: rgba(59, 111, 196, 0.1);
     color: var(--color-primary);
     display: flex;
     align-items: center;
@@ -320,7 +320,7 @@ body {
 
   .api-key-wrapper:focus-within {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px rgba(59, 111, 196, 0.12);
   }
 
   .api-key-input {
@@ -389,7 +389,7 @@ body {
   }
 
   .table-row-active {
-    background-color: rgba(37, 99, 235, 0.06);
+    background-color: rgba(59, 111, 196, 0.06);
   }
 
   .cell-input {
@@ -406,7 +406,7 @@ body {
   .cell-input:focus {
     background-color: #ffffff;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px rgba(59, 111, 196, 0.12);
   }
 
   .cell-select {
@@ -501,8 +501,8 @@ body {
   }
 
   .field-item code {
-    background-color: rgba(37, 99, 235, 0.1);
-    color: #1d4ed8;
+    background-color: rgba(59, 111, 196, 0.1);
+    color: #14284A;
     padding: 2px 8px;
     border-radius: 4px;
     font-weight: bold;
@@ -535,7 +535,7 @@ body {
     background-color: var(--background);
     border: 1px solid var(--color-panel-border);
     border-radius: 0 0 6px 6px;
-    color: #1d4ed8;
+    color: #14284A;
     font-family: var(--font-mono);
     font-size: 12px;
     padding: 15px;
@@ -574,7 +574,7 @@ body {
 
   .slide-dropzone.drag-over {
     border-color: var(--color-primary);
-    background-color: rgba(37, 99, 235, 0.06);
+    background-color: rgba(59, 111, 196, 0.06);
   }
 
   .slide-grid {
@@ -599,7 +599,7 @@ body {
 
   .slide-card.slide-card-active {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    box-shadow: 0 0 0 3px rgba(59, 111, 196, 0.15);
   }
 
   .slide-thumb-wrap {
@@ -930,13 +930,13 @@ body {
     justify-content: center;
     font-size: 26px;
     text-decoration: none;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35), 0 2px 6px rgba(15, 23, 42, 0.15);
+    box-shadow: 0 4px 14px rgba(59, 111, 196, 0.35), 0 2px 6px rgba(15, 23, 42, 0.15);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   .drawer-fab:hover {
     transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4), 0 3px 8px rgba(15, 23, 42, 0.2);
+    box-shadow: 0 6px 20px rgba(59, 111, 196, 0.4), 0 3px 8px rgba(15, 23, 42, 0.2);
   }
 
   .drawer-fab-badge {
@@ -976,7 +976,7 @@ body {
   }
 
   .history-list-item-active {
-    background-color: rgba(37, 99, 235, 0.06);
+    background-color: rgba(59, 111, 196, 0.06);
     border-color: var(--color-primary);
   }
 
@@ -986,7 +986,7 @@ body {
     align-items: flex-start;
     gap: 10px;
     background-color: var(--color-accent-light);
-    border: 1px solid rgba(14, 165, 233, 0.25);
+    border: 1px solid rgba(20, 40, 74, 0.25);
     border-radius: 8px;
     padding: 12px 14px;
     font-size: 12px;

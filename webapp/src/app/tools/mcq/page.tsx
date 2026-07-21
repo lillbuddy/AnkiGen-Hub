@@ -6,6 +6,8 @@ import { buildMcqCsv, downloadCsv } from '@/lib/export-csv'
 import { clearDrawer, getDrawerCards } from '@/lib/drawer-storage'
 import { callGeminiJson } from '@/lib/gemini-client'
 import type { McqCard } from '@/lib/history-types'
+import type { AnkiCardInput } from '@/lib/anki-connect'
+import SaveToAnkiButton from '@/components/save-to-anki-button'
 import AnkiSimulator from './anki-simulator'
 import AnkiTemplatePanel from './anki-template-panel'
 
@@ -218,6 +220,8 @@ export default function McqToolPage() {
   }
 
   const previewCard = cards[Math.min(previewIndex, cards.length - 1)] ?? SAMPLE_PREVIEW_CARD
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const ankiCards: AnkiCardInput[] = cards.map(({ localId, ...card }) => card)
 
   return (
     <main className="app-container">
@@ -304,6 +308,10 @@ D. 第一心音會變弱
                 <button onClick={handleDownloadCsv} className="btn btn-success btn-sm">
                   📄 匯出 CSV
                 </button>
+                <SaveToAnkiButton
+                  getCards={async () => ankiCards}
+                  defaultDeckName={purpose || 'AnkiGen Hub'}
+                />
               </div>
             </div>
             <div className="panel-body">

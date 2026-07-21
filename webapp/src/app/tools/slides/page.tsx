@@ -8,10 +8,12 @@ import { callGeminiJson } from '@/lib/gemini-client'
 import { buildDistractorPrompt, getGlossaryPoolExcluding, parseGlossaryMarkdown } from '@/lib/glossary'
 import { buildSlidesMcqCsv, buildSlidesOcclusionCsv, downloadCsv } from '@/lib/export-csv'
 import { computeUniqueFilename, getFileExtension, stripExtension } from '@/lib/slide-filename'
+import { fetchImageAsBase64, fileToBase64, type AnkiCardInput } from '@/lib/anki-connect'
 import SlideCard from './slide-card'
 import McqEditPanel from './mcq-edit-panel'
 import SlidesSimulator from './slides-simulator'
 import AnkiTemplatePanel from '../mcq/anki-template-panel'
+import SaveToAnkiButton from '@/components/save-to-anki-button'
 
 const DISTRACTOR_TARGET_FIELDS = ['optionB', 'optionC', 'optionD'] as const
 const DEFAULT_PROMPT = '這張圖片顯示的是什麼？'
@@ -152,6 +154,32 @@ export default function SlidesWizardPage() {
           fallbackUrl: activeImage.url,
         }
       : activeImage
+
+  // 給「存入 Anki」按鈕用：新選的圖片直接用瀏覽器裡的 File（還沒壓縮，本來就是原始畫質）；
+  // 從抽屜沿用的圖片已經在 Google Drive 上，透過同源 proxy route 抓原始檔案的 bytes。
+  async function getAnkiCardsForSlides(): Promise<AnkiCardInput[]> {
+    return Promise.all(
+      includedImages.map(async (img) => ({
+        questionText: img.questionText,
+        optionA: img.optionA,
+        optionB: img.optionB,
+        optionC: img.optionC,
+        optionD: img.optionD,
+        optionE: img.optionE,
+        optionF: img.optionF,
+        answer: img.answer,
+        isMultiple: img.isMultiple,
+        notes: img.notes,
+        image: {
+          filename: img.filename,
+          base64:
+            img.kind === 'new' && img.file
+              ? await fileToBase64(img.file)
+              : await fetchImageAsBase64(`/api/google-drive/image/${img.driveFileId}`),
+        },
+      }))
+    )
+  }
 
   function updateImage(localId: string, patch: Partial<SlideImage>) {
     setImages((prev) => prev.map((img) => (img.localId === localId ? { ...img, ...patch } : img)))
@@ -734,6 +762,10 @@ export default function SlidesWizardPage() {
                           <button onClick={handleDownloadMcqCsv} className="btn btn-success">
                             📄 匯出 Anki 匯入檔 (CSV)
                           </button>
+                          <SaveToAnkiButton
+                            getCards={getAnkiCardsForSlides}
+                            defaultDeckName={purpose || 'AnkiGen Hub'}
+                          />
                         </div>
                       </div>
                     </div>
@@ -791,6 +823,10 @@ export default function SlidesWizardPage() {
                           </button>
                         </div>
                       </div>
+                      <p className="mt-2 text-xs text-text-secondary">
+                        Image Occlusion 需要在 Anki 裡手動畫遮蓋範圍，暫不支援直接存入 Anki，請用上面的 CSV +
+                        圖片。
+                      </p>
                     </div>
                   )}
 

@@ -71,9 +71,9 @@
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 20px;
-  background-color: rgba(14, 165, 233, 0.1);
-  border: 1px solid rgba(14, 165, 233, 0.25);
-  color: #0ea5e9;
+  background-color: rgba(20, 40, 74, 0.1);
+  border: 1px solid rgba(20, 40, 74, 0.25);
+  color: #14284A;
 }
 
 .sim-card-type-badge.multiple {
@@ -141,14 +141,14 @@
 }
 
 .anki-card-front .sim-option-btn.selected {
-  background-color: rgba(14, 165, 233, 0.12);
-  border-color: #0ea5e9;
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+  background-color: rgba(20, 40, 74, 0.12);
+  border-color: #14284A;
+  box-shadow: 0 0 0 3px rgba(20, 40, 74, 0.12);
 }
 
 .anki-card-front .sim-option-btn.selected .sim-option-prefix {
-  background-color: #0ea5e9;
-  border-color: #0ea5e9;
+  background-color: #14284A;
+  border-color: #14284A;
   color: #fff;
 }
 
