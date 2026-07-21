@@ -763,7 +763,7 @@ export default function SlidesWizardPage() {
                       <div className="mt-3">
                         <label className="field-label">🏷️ 這批卡片的用途標籤</label>
                         <input
-                          placeholder="例如：藥理學期中考重點——這裡填的內容會標註這份卡組的用途，方便之後在歷史紀錄搜尋，也會是存入 Anki 時預設的牌組名稱"
+                          placeholder="方便日後在歷史紀錄搜尋，也是存入 Anki 時的牌組名稱"
                           value={purpose}
                           onChange={(e) => setPurpose(e.target.value)}
                           className="field-input mb-3"
@@ -786,6 +786,7 @@ export default function SlidesWizardPage() {
                           <SaveToAnkiButton
                             getCards={getAnkiCardsForSlides}
                             defaultDeckName={purpose || 'AnkiGen Hub'}
+                            size="md"
                           />
                         </div>
                       </div>
@@ -834,7 +835,7 @@ export default function SlidesWizardPage() {
                       <div className="mt-3">
                         <label className="field-label">🏷️ 這批卡片的用途標籤</label>
                         <input
-                          placeholder="例如：藥理學期中考重點——這裡填的內容會標註這份卡組的用途，方便之後在歷史紀錄搜尋"
+                          placeholder="方便日後在歷史紀錄搜尋"
                           value={purpose}
                           onChange={(e) => setPurpose(e.target.value)}
                           className="field-input mb-3"

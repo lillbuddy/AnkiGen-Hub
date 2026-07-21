@@ -17,10 +17,15 @@ import {
 export default function SaveToAnkiButton({
   getCards,
   defaultDeckName = 'AnkiGen Hub',
+  size = 'sm',
 }: {
   getCards: () => Promise<AnkiCardInput[]>
   defaultDeckName?: string
+  // 讓呼叫端可以跟旁邊的按鈕對齊高度：mcq 頁面和歷史紀錄的同排按鈕是 btn-sm，
+  // slides 頁面的同排按鈕沒有加 btn-sm（比較大顆），兩邊都要能對上。
+  size?: 'sm' | 'md'
 }) {
+  const sizeClass = size === 'sm' ? ' btn-sm' : ''
   const [open, setOpen] = useState(false)
   const [deckName, setDeckName] = useState(defaultDeckName)
   const [status, setStatus] = useState<'idle' | 'working'>('idle')
@@ -70,7 +75,7 @@ export default function SaveToAnkiButton({
   return (
     <div className="inline-flex flex-col items-start gap-2">
       {!open ? (
-        <button onClick={() => setOpen(true)} className="btn btn-secondary btn-sm">
+        <button onClick={() => setOpen(true)} className={`btn btn-primary${sizeClass}`}>
           📥 存入 Anki
         </button>
       ) : (
@@ -86,11 +91,11 @@ export default function SaveToAnkiButton({
           <button
             onClick={handleConfirm}
             disabled={status === 'working'}
-            className="btn btn-primary btn-sm"
+            className={`btn btn-primary${sizeClass}`}
           >
             {status === 'working' ? '存入中...' : '確認'}
           </button>
-          <button onClick={() => setOpen(false)} className="btn btn-secondary btn-sm">
+          <button onClick={() => setOpen(false)} className={`btn btn-secondary${sizeClass}`}>
             取消
           </button>
         </div>
