@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Script from 'next/script'
 import { buildMcqCsv, downloadCsv } from '@/lib/export-csv'
@@ -105,6 +105,7 @@ export default function McqToolPage() {
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
   const [previewIndex, setPreviewIndex] = useState(0)
   const [fromDrawer, setFromDrawer] = useState(false)
+  const lastSavedSignatureRef = useRef<string | null>(null)
 
   useEffect(() => {
     // localStorage 只在瀏覽器端讀得到，故意等 mount 後才讀，讓使用者用過一次的
@@ -188,21 +189,29 @@ export default function McqToolPage() {
   function handleDownloadCsv() {
     if (cards.length === 0) return
     downloadCsv(`ankigen_mcq_${Date.now()}.csv`, buildMcqCsv(cards))
+    void ensureSavedToHistory()
   }
 
-  async function handleSave() {
-    if (cards.length === 0) {
-      setMessage({ type: 'error', text: '請先至少準備一張卡片' })
-      return
-    }
-    const missingText = cards.some((c) => !c.questionText.trim() || !c.answer.trim())
-    if (missingText) {
-      setMessage({ type: 'error', text: '每張卡片都要填題目和答案' })
-      return
+  // 不管使用者是按「存入紀錄」、「匯出 CSV」還是「存入 Anki」，都應該順手把這批卡片
+  // 存進歷史紀錄，不用另外再點一次。用內容的簽章判斷「這批卡片跟上次存的一不一樣」，
+  // 一樣就跳過（避免同一批卡片因為連續按了兩個按鈕而存成兩筆重複的歷史紀錄）。
+  function buildHistorySignature() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    return JSON.stringify({ purpose, cards: cards.map(({ localId, ...rest }) => rest) })
+  }
+
+  async function ensureSavedToHistory(): Promise<{ ok: boolean; alreadySaved: boolean; error?: string }> {
+    if (!user) return { ok: false, alreadySaved: false, error: '請先登入才能存入歷史紀錄' }
+    if (cards.length === 0) return { ok: false, alreadySaved: false, error: '請先至少準備一張卡片' }
+    if (cards.some((c) => !c.questionText.trim() || !c.answer.trim())) {
+      return { ok: false, alreadySaved: false, error: '每張卡片都要填題目和答案' }
     }
 
-    setSaving(true)
-    setMessage(null)
+    const signature = buildHistorySignature()
+    if (signature === lastSavedSignatureRef.current) {
+      return { ok: true, alreadySaved: true }
+    }
+
     try {
       const response = await fetch('/api/history/mcq', {
         method: 'POST',
@@ -214,20 +223,28 @@ export default function McqToolPage() {
         }),
       })
       const data = await response.json()
-      if (!response.ok) {
-        setMessage({ type: 'error', text: data.error ?? '存入歷史紀錄失敗' })
-        return
-      }
+      if (!response.ok) return { ok: false, alreadySaved: false, error: data.error ?? '存入歷史紀錄失敗' }
+      lastSavedSignatureRef.current = signature
       if (fromDrawer) clearDrawer()
-      setMessage({ type: 'ok', text: '已成功存入歷史紀錄！' })
-      setCards([])
-      setPurpose('')
-      setFromDrawer(false)
+      return { ok: true, alreadySaved: false }
     } catch (error) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : String(error) })
-    } finally {
-      setSaving(false)
+      return { ok: false, alreadySaved: false, error: error instanceof Error ? error.message : String(error) }
     }
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    setMessage(null)
+    const result = await ensureSavedToHistory()
+    setSaving(false)
+    if (!result.ok) {
+      setMessage({ type: 'error', text: result.error ?? '存入歷史紀錄失敗' })
+      return
+    }
+    setMessage({
+      type: 'ok',
+      text: result.alreadySaved ? '這份卡組已經存入歷史紀錄囉！' : '已成功存入歷史紀錄！',
+    })
   }
 
   const previewCard = cards[Math.min(previewIndex, cards.length - 1)] ?? SAMPLE_PREVIEW_CARD
@@ -348,6 +365,7 @@ D. 第一心音會變弱
                 <SaveToAnkiButton
                   getCards={async () => ankiCards}
                   defaultDeckName={purpose || 'AnkiGen Hub'}
+                  onTrigger={() => void ensureSavedToHistory()}
                 />
               </div>
               {userReady && !user && (

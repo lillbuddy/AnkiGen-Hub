@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type ChangeEvent, type DragEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import Link from 'next/link'
 import Script from 'next/script'
 import { createPreviewBlob } from '@/lib/create-preview-blob'
@@ -95,6 +95,8 @@ export default function SlidesWizardPage() {
   const [purpose, setPurpose] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
+  const lastSavedMcqSignatureRef = useRef<string | null>(null)
+  const lastSavedOcclusionSignatureRef = useRef<string | null>(null)
 
   const [apiKey, setApiKey] = useState('')
   const [model, setModel] = useState('gemini-3.5-flash')
@@ -339,19 +341,48 @@ export default function SlidesWizardPage() {
     }
   }
 
-  async function handleSaveMcq() {
+  function buildMcqHistorySignature() {
+    return JSON.stringify({
+      purpose,
+      rows: includedImages.map((c) => ({
+        filename: c.filename,
+        questionText: c.questionText,
+        optionA: c.optionA,
+        optionB: c.optionB,
+        optionC: c.optionC,
+        optionD: c.optionD,
+        optionE: c.optionE,
+        optionF: c.optionF,
+        answer: c.answer,
+        isMultiple: c.isMultiple,
+        notes: c.notes,
+        kind: c.kind,
+        driveFileId: c.driveFileId,
+        drivePreviewFileId: c.drivePreviewFileId,
+      })),
+    })
+  }
+
+  // 不管使用者是按「存入紀錄」、「匯出 CSV」還是「存入 Anki」，都應該順手把這批卡片
+  // 存進歷史紀錄，不用另外再點一次。用內容的簽章判斷「這批卡片跟上次存的一不一樣」，
+  // 一樣就跳過（避免同一批卡片因為連續按了兩個按鈕而存成兩筆重複的歷史紀錄）。
+  async function ensureSavedToHistoryMcq(): Promise<{
+    ok: boolean
+    alreadySaved: boolean
+    error?: string
+  }> {
     const rows = includedImages
-    if (rows.length === 0) {
-      setMessage({ type: 'error', text: '請先選取並勾選至少一張圖片' })
-      return
-    }
+    if (!user) return { ok: false, alreadySaved: false, error: '請先登入才能存入歷史紀錄' }
+    if (rows.length === 0) return { ok: false, alreadySaved: false, error: '請先選取並勾選至少一張圖片' }
     if (rows.some((c) => !c.questionText.trim() || !c.answer.trim())) {
-      setMessage({ type: 'error', text: '每張卡片都要填提問文字和答案' })
-      return
+      return { ok: false, alreadySaved: false, error: '每張卡片都要填提問文字和答案' }
     }
 
-    setSaving(true)
-    setMessage(null)
+    const signature = buildMcqHistorySignature()
+    if (signature === lastSavedMcqSignatureRef.current) {
+      return { ok: true, alreadySaved: true }
+    }
+
     try {
       const formData = new FormData()
       formData.append('purpose', purpose)
@@ -387,37 +418,57 @@ export default function SlidesWizardPage() {
 
       const response = await fetch('/api/history/slides-mcq', { method: 'POST', body: formData })
       const data = await response.json()
-      if (!response.ok) {
-        setMessage({ type: 'error', text: data.error ?? '存入歷史紀錄失敗' })
-        return
-      }
-
+      if (!response.ok) return { ok: false, alreadySaved: false, error: data.error ?? '存入歷史紀錄失敗' }
+      lastSavedMcqSignatureRef.current = signature
       if (fromDrawer) clearDrawer()
-      setMessage({ type: 'ok', text: '已成功存入歷史紀錄！' })
-      images.forEach((img) => {
-        if (img.kind === 'new') URL.revokeObjectURL(img.url)
-      })
-      setImages([])
-      setActiveId(null)
-      setPurpose('')
-      setFromDrawer(false)
-      setStep('label')
+      return { ok: true, alreadySaved: false }
     } catch (error) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : String(error) })
-    } finally {
-      setSaving(false)
+      return { ok: false, alreadySaved: false, error: error instanceof Error ? error.message : String(error) }
     }
   }
 
-  async function handleSaveOcclusion() {
-    const rows = includedImages
-    if (rows.length === 0) {
-      setMessage({ type: 'error', text: '請先選取並勾選至少一張圖片' })
-      return
-    }
-
+  async function handleSaveMcq() {
     setSaving(true)
     setMessage(null)
+    const result = await ensureSavedToHistoryMcq()
+    setSaving(false)
+    if (!result.ok) {
+      setMessage({ type: 'error', text: result.error ?? '存入歷史紀錄失敗' })
+      return
+    }
+    setMessage({
+      type: 'ok',
+      text: result.alreadySaved ? '這份卡組已經存入歷史紀錄囉！' : '已成功存入歷史紀錄！',
+    })
+  }
+
+  function buildOcclusionHistorySignature() {
+    return JSON.stringify({
+      purpose,
+      rows: includedImages.map((c) => ({
+        filename: c.filename,
+        notes: c.notes,
+        kind: c.kind,
+        driveFileId: c.driveFileId,
+        drivePreviewFileId: c.drivePreviewFileId,
+      })),
+    })
+  }
+
+  async function ensureSavedToHistoryOcclusion(): Promise<{
+    ok: boolean
+    alreadySaved: boolean
+    error?: string
+  }> {
+    const rows = includedImages
+    if (!user) return { ok: false, alreadySaved: false, error: '請先登入才能存入歷史紀錄' }
+    if (rows.length === 0) return { ok: false, alreadySaved: false, error: '請先選取並勾選至少一張圖片' }
+
+    const signature = buildOcclusionHistorySignature()
+    if (signature === lastSavedOcclusionSignatureRef.current) {
+      return { ok: true, alreadySaved: true }
+    }
+
     try {
       const formData = new FormData()
       formData.append('purpose', purpose)
@@ -444,24 +495,27 @@ export default function SlidesWizardPage() {
 
       const response = await fetch('/api/history/slides-occlusion', { method: 'POST', body: formData })
       const data = await response.json()
-      if (!response.ok) {
-        setMessage({ type: 'error', text: data.error ?? '存入歷史紀錄失敗' })
-        return
-      }
-
-      setMessage({ type: 'ok', text: '已成功存入歷史紀錄！' })
-      images.forEach((img) => {
-        if (img.kind === 'new') URL.revokeObjectURL(img.url)
-      })
-      setImages([])
-      setActiveId(null)
-      setPurpose('')
-      setStep('label')
+      if (!response.ok) return { ok: false, alreadySaved: false, error: data.error ?? '存入歷史紀錄失敗' }
+      lastSavedOcclusionSignatureRef.current = signature
+      return { ok: true, alreadySaved: false }
     } catch (error) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : String(error) })
-    } finally {
-      setSaving(false)
+      return { ok: false, alreadySaved: false, error: error instanceof Error ? error.message : String(error) }
     }
+  }
+
+  async function handleSaveOcclusion() {
+    setSaving(true)
+    setMessage(null)
+    const result = await ensureSavedToHistoryOcclusion()
+    setSaving(false)
+    if (!result.ok) {
+      setMessage({ type: 'error', text: result.error ?? '存入歷史紀錄失敗' })
+      return
+    }
+    setMessage({
+      type: 'ok',
+      text: result.alreadySaved ? '這份卡組已經存入歷史紀錄囉！' : '已成功存入歷史紀錄！',
+    })
   }
 
   function handleDownloadMcqCsv() {
@@ -479,6 +533,7 @@ export default function SlidesWizardPage() {
         }))
       )
     )
+    void ensureSavedToHistoryMcq()
   }
 
   function handleDownloadOcclusionCsv() {
@@ -490,6 +545,7 @@ export default function SlidesWizardPage() {
       `ankigen_slides_image_occlusion_${formattedDate()}.csv`,
       buildSlidesOcclusionCsv(includedImages)
     )
+    void ensureSavedToHistoryOcclusion()
   }
 
   return (
@@ -795,6 +851,7 @@ export default function SlidesWizardPage() {
                             getCards={getAnkiCardsForSlides}
                             defaultDeckName={purpose || 'AnkiGen Hub'}
                             size="md"
+                            onTrigger={() => void ensureSavedToHistoryMcq()}
                           />
                         </div>
                       </div>

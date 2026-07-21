@@ -10,29 +10,33 @@ import {
 } from '@/lib/anki-connect'
 
 // 三個呼叫端（文字選擇題、圖片標記工具、歷史紀錄）的卡片資料形狀都不一樣，圖片
-// 來源也不同（本機 File、抽屜沿用、Google Drive）。這個元件只負責「開牌組名稱
-// 輸入框 -> 呼叫 AnkiConnect -> 顯示結果」，實際怎麼組出 AnkiCardInput[]（要不要
-// 先抓圖片轉 base64）交給呼叫端的 getCards，按下確認才會呼叫，避免使用者根本沒
-// 點「存入 Anki」也白白抓一次圖片。
+// 來源也不同（本機 File、抽屜沿用、Google Drive）。這個元件只負責「按一下 ->
+// 呼叫 AnkiConnect -> 顯示結果」，實際怎麼組出 AnkiCardInput[]（要不要先抓圖片
+// 轉 base64）交給呼叫端的 getCards，按下按鈕才會呼叫，避免使用者根本沒點
+// 「存入 Anki」也白白抓一次圖片。牌組名稱直接沿用呼叫端傳進來的用途標籤，不用
+// 使用者另外再填一次。
 export default function SaveToAnkiButton({
   getCards,
   defaultDeckName = 'AnkiGen Hub',
   size = 'sm',
+  onTrigger,
 }: {
   getCards: () => Promise<AnkiCardInput[]>
   defaultDeckName?: string
   // 讓呼叫端可以跟旁邊的按鈕對齊高度：mcq 頁面和歷史紀錄的同排按鈕是 btn-sm，
   // slides 頁面的同排按鈕沒有加 btn-sm（比較大顆），兩邊都要能對上。
   size?: 'sm' | 'md'
+  // 按下按鈕的當下順便觸發的動作（例如同步存入歷史紀錄），不等待、不影響這裡
+  // 自己的存入 Anki 流程，失敗也不會顯示在這個元件的訊息區。
+  onTrigger?: () => void
 }) {
   const sizeClass = size === 'sm' ? ' btn-sm' : ''
-  const [open, setOpen] = useState(false)
-  const [deckName, setDeckName] = useState(defaultDeckName)
   const [status, setStatus] = useState<'idle' | 'working'>('idle')
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
 
-  async function handleConfirm() {
-    if (!deckName.trim()) return
+  async function handleClick() {
+    const deckName = defaultDeckName.trim() || 'AnkiGen Hub'
+    onTrigger?.()
 
     setStatus('working')
     setMessage(null)
@@ -58,10 +62,9 @@ export default function SaveToAnkiButton({
     try {
       const cards = await getCards()
       await ensureAnkiGenModelExists()
-      await ensureDeckExists(deckName.trim())
-      await addCardsToAnki(deckName.trim(), cards)
-      setMessage({ type: 'ok', text: `已成功存入 Anki 的「${deckName.trim()}」牌組！` })
-      setOpen(false)
+      await ensureDeckExists(deckName)
+      await addCardsToAnki(deckName, cards)
+      setMessage({ type: 'ok', text: `已成功存入 Anki 的「${deckName}」牌組！` })
     } catch (error) {
       setMessage({
         type: 'error',
@@ -74,32 +77,9 @@ export default function SaveToAnkiButton({
 
   return (
     <div className="inline-flex flex-col items-start gap-2">
-      {!open ? (
-        <button onClick={() => setOpen(true)} className={`btn btn-primary${sizeClass}`}>
-          📥 存入 Anki
-        </button>
-      ) : (
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={deckName}
-            onChange={(e) => setDeckName(e.target.value)}
-            placeholder="目標牌組名稱"
-            className="field-input"
-            style={{ width: '160px' }}
-          />
-          <button
-            onClick={handleConfirm}
-            disabled={status === 'working'}
-            className={`btn btn-primary${sizeClass}`}
-          >
-            {status === 'working' ? '存入中...' : '確認'}
-          </button>
-          <button onClick={() => setOpen(false)} className={`btn btn-secondary${sizeClass}`}>
-            取消
-          </button>
-        </div>
-      )}
+      <button onClick={handleClick} disabled={status === 'working'} className={`btn btn-primary${sizeClass}`}>
+        {status === 'working' ? '存入中...' : '📥 存入 Anki'}
+      </button>
       {message && (
         <p className={`text-xs ${message.type === 'ok' ? 'text-success' : 'text-danger'}`}>
           {message.text}
