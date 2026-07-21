@@ -11,6 +11,7 @@ import { callGeminiJson } from '@/lib/gemini-client'
 import { buildDistractorPrompt, getGlossaryPoolExcluding, parseGlossaryMarkdown } from '@/lib/glossary'
 import { buildSlidesMcqCsv, buildSlidesOcclusionCsv, downloadCsv } from '@/lib/export-csv'
 import { computeUniqueFilename, getFileExtension, stripExtension } from '@/lib/slide-filename'
+import { downloadBlob, downloadUrl } from '@/lib/download-file'
 import { fetchImageAsBase64, fileToBase64, type AnkiCardInput } from '@/lib/anki-connect'
 import SlideCard from './slide-card'
 import McqEditPanel from './mcq-edit-panel'
@@ -257,15 +258,35 @@ export default function SlidesWizardPage() {
     if (rows.length === 0) return
 
     rows.forEach((img, idx) => {
-      setTimeout(() => {
-        const link = document.createElement('a')
-        link.href = img.url
-        link.download = img.filename
-        link.style.visibility = 'hidden'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      }, idx * 250)
+      setTimeout(() => downloadUrl(img.url, img.filename), idx * 250)
+    })
+  }
+
+  // 單張圖片的下載：新選的圖片本來就有本機的 blob URL，直接下載；沿用的舊卡片
+  // 圖片已經在 Google Drive 上，透過同源 proxy route 抓「原始檔案」（不是畫面上
+  // 顯示用的低畫質預覽圖）的 bytes 再下載，跟「存入 Anki」抓圖片的邏輯一致。
+  async function downloadSlideImage(img: SlideImage) {
+    if (img.kind === 'new') {
+      downloadUrl(img.url, img.filename)
+      return
+    }
+    if (!img.driveFileId) return
+    try {
+      const response = await fetch(`/api/google-drive/image/${img.driveFileId}`)
+      if (!response.ok) throw new Error(`圖片下載失敗（${response.status}）`)
+      downloadBlob(await response.blob(), img.filename)
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : String(error) })
+    }
+  }
+
+  // 一鍵下載這批卡片目前所有的圖片；瀏覽器對連續觸發的下載有防跳窗限制，
+  // 用跟 downloadRenamedImages 一樣的錯開時間方式，避免只有第一張真的下載到。
+  function handleDownloadAllImages() {
+    const rows = includedImages
+    if (rows.length === 0) return
+    rows.forEach((img, idx) => {
+      setTimeout(() => void downloadSlideImage(img), idx * 250)
     })
   }
 
@@ -806,6 +827,13 @@ export default function SlidesWizardPage() {
                                       編輯
                                     </button>
                                     <button
+                                      onClick={() => void downloadSlideImage(img)}
+                                      className="btn btn-secondary btn-xs"
+                                      title="下載這張圖片檔案"
+                                    >
+                                      ⬇️
+                                    </button>
+                                    <button
                                       onClick={() => removeImage(img.localId)}
                                       className="btn btn-danger-outline btn-xs"
                                     >
@@ -843,6 +871,9 @@ export default function SlidesWizardPage() {
                             className="btn btn-secondary"
                           >
                             {userReady && !user ? '🔒' : '🔖'} {saving ? '存入中...' : '存入紀錄'}
+                          </button>
+                          <button onClick={handleDownloadAllImages} className="btn btn-secondary">
+                            ⬇️ 下載全部圖片
                           </button>
                           <button onClick={handleDownloadMcqCsv} className="btn btn-success">
                             📄 匯出 Anki 匯入檔 (CSV)
