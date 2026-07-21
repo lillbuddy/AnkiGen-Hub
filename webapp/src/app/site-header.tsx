@@ -82,7 +82,7 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-panel-border bg-white/85 py-3 backdrop-blur-md">
-      <div className="flex w-full items-center justify-between gap-4 px-6 sm:px-10">
+      <div className="relative flex w-full items-center justify-between gap-4 px-6 sm:px-10">
         <Link
           href="/"
           className="flex shrink-0 items-center gap-3 font-display text-2xl font-extrabold tracking-tight text-text-primary"
@@ -93,7 +93,7 @@ export default function SiteHeader() {
           </span>
         </Link>
 
-        <span className="hidden truncate text-sm italic text-text-secondary xl:inline">
+        <span className="absolute left-1/2 hidden -translate-x-1/2 truncate text-sm italic text-text-secondary xl:inline">
           The central hub for instant Anki creation
         </span>
 
@@ -128,7 +128,7 @@ export default function SiteHeader() {
               </button>
             </>
           )}
-          <span className="hidden text-xs text-text-secondary sm:inline">本網站並非 Anki 官方網站</span>
+          <span className="whitespace-nowrap text-xs text-text-secondary">本網站並非 Anki 官方網站</span>
           {ready && !user && !isLogin && !isHome && (
             <Link href="/login" className="btn btn-primary btn-sm">
               登入
