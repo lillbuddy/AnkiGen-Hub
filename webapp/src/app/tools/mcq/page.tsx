@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Script from 'next/script'
 import { buildMcqCsv, downloadCsv } from '@/lib/export-csv'
 import { clearDrawer, getDrawerCards } from '@/lib/drawer-storage'
+import { getSavedGeminiApiKey, saveGeminiApiKey } from '@/lib/gemini-key-storage'
 import { callGeminiJson } from '@/lib/gemini-client'
 import type { McqCard } from '@/lib/history-types'
 import type { AnkiCardInput } from '@/lib/anki-connect'
@@ -101,6 +102,13 @@ export default function McqToolPage() {
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
   const [previewIndex, setPreviewIndex] = useState(0)
   const [fromDrawer, setFromDrawer] = useState(false)
+
+  useEffect(() => {
+    // localStorage 只在瀏覽器端讀得到，故意等 mount 後才讀，讓使用者用過一次的
+    // key 之後打開頁面就自動帶出來，不用每次都重打。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setApiKey(getSavedGeminiApiKey())
+  }, [])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -250,7 +258,10 @@ export default function McqToolPage() {
                 type="password"
                 placeholder="輸入您的 Gemini API Key"
                 value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
+                onChange={(e) => {
+                  setApiKey(e.target.value)
+                  saveGeminiApiKey(e.target.value.trim())
+                }}
                 className="api-key-input"
               />
               <span className="api-key-divider">|</span>

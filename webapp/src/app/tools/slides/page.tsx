@@ -4,6 +4,7 @@ import { useEffect, useState, type ChangeEvent, type DragEvent } from 'react'
 import Script from 'next/script'
 import { createPreviewBlob } from '@/lib/create-preview-blob'
 import { clearDrawer, getDrawerCards } from '@/lib/drawer-storage'
+import { getSavedGeminiApiKey, saveGeminiApiKey } from '@/lib/gemini-key-storage'
 import { callGeminiJson } from '@/lib/gemini-client'
 import { buildDistractorPrompt, getGlossaryPoolExcluding, parseGlossaryMarkdown } from '@/lib/glossary'
 import { buildSlidesMcqCsv, buildSlidesOcclusionCsv, downloadCsv } from '@/lib/export-csv'
@@ -97,6 +98,13 @@ export default function SlidesWizardPage() {
   const [glossary, setGlossary] = useState<string[]>([])
   const [glossaryStatus, setGlossaryStatus] = useState('尚未上傳，AI 會憑空生成干擾選項')
   const [generatingFor, setGeneratingFor] = useState<string | null>(null)
+
+  useEffect(() => {
+    // localStorage 只在瀏覽器端讀得到，故意等 mount 後才讀，讓使用者用過一次的
+    // key 之後打開頁面就自動帶出來，不用每次都重打。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setApiKey(getSavedGeminiApiKey())
+  }, [])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -635,7 +643,10 @@ export default function SlidesWizardPage() {
                           className="api-key-input"
                           placeholder="輸入您的 Gemini API Key（用於 AI 產生干擾選項）"
                           value={apiKey}
-                          onChange={(e) => setApiKey(e.target.value)}
+                          onChange={(e) => {
+                            setApiKey(e.target.value)
+                            saveGeminiApiKey(e.target.value.trim())
+                          }}
                         />
                         <span className="api-key-divider">|</span>
                         <span title="選擇 AI 模型">🤖</span>
