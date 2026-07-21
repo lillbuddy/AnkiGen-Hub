@@ -30,7 +30,14 @@ export default function SignupPage() {
 
     setLoading(true)
     const supabase = createClient()
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      // 一定要帶這個，確認信裡的連結才會導回使用者實際註冊的網域（本機開發是
+      // localhost、正式站是 Vercel 網域），而不是 Supabase 專案設定裡固定的
+      // Site URL——不然本機測試時設定的 localhost 會被寄進所有使用者的信裡。
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    })
     setLoading(false)
 
     if (error) {

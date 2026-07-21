@@ -1,9 +1,29 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { Suspense, useState, type FormEvent } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+
+// useSearchParams() 只有這兩句訊息用得到，拆成獨立元件包 Suspense，避免整個
+// 登入頁（表單本身跟 searchParams 無關）都被迫變成只能在客戶端渲染。
+function ConfirmStatusMessage() {
+  const searchParams = useSearchParams()
+  const confirmed = searchParams.get('confirmed') === '1'
+  const confirmFailed = searchParams.get('error') === 'confirm_failed'
+
+  if (confirmed) {
+    return <p className="mb-3 text-sm text-success">信箱驗證成功，請登入！</p>
+  }
+  if (confirmFailed) {
+    return (
+      <p className="mb-3 text-sm text-danger">
+        確認連結已失效（可能是連結過期或已經用過一次），請重新註冊一次以取得新的確認信。
+      </p>
+    )
+  }
+  return null
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -34,6 +54,9 @@ export default function LoginPage() {
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center p-6">
       <div className="card-panel p-8">
         <h1 className="mb-4 text-xl font-semibold text-text-primary">登入</h1>
+        <Suspense fallback={null}>
+          <ConfirmStatusMessage />
+        </Suspense>
         <form onSubmit={handleLogin} className="flex flex-col gap-3">
           <input
             type="email"
