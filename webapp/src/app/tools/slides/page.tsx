@@ -12,7 +12,17 @@ import { buildDistractorPrompt, getGlossaryPoolExcluding, parseGlossaryMarkdown 
 import { buildSlidesMcqCsv, buildSlidesOcclusionCsv, downloadCsv } from '@/lib/export-csv'
 import { computeUniqueFilename, getFileExtension, stripExtension } from '@/lib/slide-filename'
 import { downloadBlob, downloadUrl } from '@/lib/download-file'
-import { fetchImageAsBase64, fileToBase64, type AnkiCardInput } from '@/lib/anki-connect'
+import {
+  addCardsToAnki,
+  addOcclusionCardsToAnki,
+  ensureAnkiGenModelExists,
+  ensureDeckExists,
+  ensureImageOcclusionModelAvailable,
+  fetchImageAsBase64,
+  fileToBase64,
+  type AnkiCardInput,
+  type AnkiOcclusionCardInput,
+} from '@/lib/anki-connect'
 import SlideCard from './slide-card'
 import McqEditPanel from './mcq-edit-panel'
 import SlidesSimulator from './slides-simulator'
@@ -183,6 +193,24 @@ export default function SlidesWizardPage() {
         optionF: img.optionF,
         answer: img.answer,
         isMultiple: img.isMultiple,
+        notes: img.notes,
+        image: {
+          filename: img.filename,
+          base64:
+            img.kind === 'new' && img.file
+              ? await fileToBase64(img.file)
+              : await fetchImageAsBase64(`/api/google-drive/image/${img.driveFileId}`),
+        },
+      }))
+    )
+  }
+
+  // Image Occlusion 模式用：跟上面 getAnkiCardsForSlides 同一套圖片來源邏輯，
+  // 只是卡片資料只有檔名和備註，沒有題目/選項/答案。
+  async function getAnkiCardsForOcclusion(): Promise<AnkiOcclusionCardInput[]> {
+    return Promise.all(
+      includedImages.map(async (img) => ({
+        filename: img.filename,
         notes: img.notes,
         image: {
           filename: img.filename,
@@ -879,7 +907,12 @@ export default function SlidesWizardPage() {
                             📄 匯出 Anki 匯入檔 (CSV)
                           </button>
                           <SaveToAnkiButton
-                            getCards={getAnkiCardsForSlides}
+                            saveCards={async (deckName) => {
+                              const cards = await getAnkiCardsForSlides()
+                              await ensureAnkiGenModelExists()
+                              await ensureDeckExists(deckName)
+                              await addCardsToAnki(deckName, cards)
+                            }}
                             defaultDeckName={purpose || 'AnkiGen Hub'}
                             size="md"
                             onTrigger={() => void ensureSavedToHistoryMcq()}
@@ -962,6 +995,17 @@ export default function SlidesWizardPage() {
                           <button onClick={handleDownloadOcclusionCsv} className="btn btn-success">
                             📄 匯出 Image Occlusion 匯入檔 (CSV)
                           </button>
+                          <SaveToAnkiButton
+                            saveCards={async (deckName) => {
+                              const cards = await getAnkiCardsForOcclusion()
+                              await ensureImageOcclusionModelAvailable()
+                              await ensureDeckExists(deckName)
+                              await addOcclusionCardsToAnki(deckName, cards)
+                            }}
+                            defaultDeckName={purpose || 'AnkiGen Hub'}
+                            size="md"
+                            onTrigger={() => void ensureSavedToHistoryOcclusion()}
+                          />
                         </div>
                       </div>
                       {userReady && !user && (
@@ -973,8 +1017,8 @@ export default function SlidesWizardPage() {
                         </p>
                       )}
                       <p className="mt-2 text-xs text-text-secondary">
-                        Image Occlusion 需要在 Anki 裡手動畫遮蓋範圍，暫不支援直接存入 Anki，請用上面的 CSV +
-                        圖片。
+                        Image Occlusion 卡片存入 Anki 後還沒有真正的遮罩範圍，請在 Anki 打開每一張筆記，用內建的
+                        遮罩編輯器畫出實際的遮蓋範圍（跟用 CSV 手動匯入的結果一樣，只是省了手動匯入這一步）。
                       </p>
                     </div>
                   )}

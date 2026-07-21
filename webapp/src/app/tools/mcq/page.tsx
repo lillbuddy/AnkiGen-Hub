@@ -9,7 +9,7 @@ import { useCurrentUser } from '@/lib/use-current-user'
 import { getSavedGeminiApiKey, saveGeminiApiKey } from '@/lib/gemini-key-storage'
 import { callGeminiJson } from '@/lib/gemini-client'
 import type { McqCard } from '@/lib/history-types'
-import type { AnkiCardInput } from '@/lib/anki-connect'
+import { addCardsToAnki, ensureAnkiGenModelExists, ensureDeckExists, type AnkiCardInput } from '@/lib/anki-connect'
 import SaveToAnkiButton from '@/components/save-to-anki-button'
 import AnkiSimulator from './anki-simulator'
 import AnkiTemplatePanel from './anki-template-panel'
@@ -363,7 +363,11 @@ D. 第一心音會變弱
                   📄 匯出 CSV
                 </button>
                 <SaveToAnkiButton
-                  getCards={async () => ankiCards}
+                  saveCards={async (deckName) => {
+                    await ensureAnkiGenModelExists()
+                    await ensureDeckExists(deckName)
+                    await addCardsToAnki(deckName, ankiCards)
+                  }}
                   defaultDeckName={purpose || 'AnkiGen Hub'}
                   onTrigger={() => void ensureSavedToHistory()}
                 />

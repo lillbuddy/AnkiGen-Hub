@@ -8,7 +8,16 @@ import {
   type OcclusionCard,
   type SlidesMcqCard,
 } from '@/lib/history-types'
-import { fetchImageAsBase64, type AnkiCardInput } from '@/lib/anki-connect'
+import {
+  addCardsToAnki,
+  addOcclusionCardsToAnki,
+  ensureAnkiGenModelExists,
+  ensureDeckExists,
+  ensureImageOcclusionModelAvailable,
+  fetchImageAsBase64,
+  type AnkiCardInput,
+  type AnkiOcclusionCardInput,
+} from '@/lib/anki-connect'
 import DeleteHistoryButton from './delete-history-button'
 import DownloadCsvButton from './download-csv-button'
 import SaveToAnkiButton from '@/components/save-to-anki-button'
@@ -57,6 +66,21 @@ export default function HistoryLayout({ records }: { records: HistoryRecord[] })
     return []
   }
 
+  async function getAnkiOcclusionCardsForSelected(): Promise<AnkiOcclusionCardInput[]> {
+    if (!selected || selected.source !== 'slides-occlusion') return []
+
+    return Promise.all(
+      (selected.cards as OcclusionCard[]).map(async (card) => ({
+        filename: card.filename,
+        notes: card.notes,
+        image: {
+          filename: card.filename,
+          base64: await fetchImageAsBase64(`/api/google-drive/image/${card.driveFileId}`),
+        },
+      }))
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6 md:flex-row md:items-start">
       <div className="flex w-full flex-col gap-2 md:w-72 md:flex-shrink-0">
@@ -94,7 +118,23 @@ export default function HistoryLayout({ records }: { records: HistoryRecord[] })
               <DownloadCsvButton source={selected.source} cards={selected.cards} />
               {(selected.source === 'mcq' || selected.source === 'slides-mcq') && (
                 <SaveToAnkiButton
-                  getCards={getAnkiCardsForSelected}
+                  saveCards={async (deckName) => {
+                    const cards = await getAnkiCardsForSelected()
+                    await ensureAnkiGenModelExists()
+                    await ensureDeckExists(deckName)
+                    await addCardsToAnki(deckName, cards)
+                  }}
+                  defaultDeckName={selected.purpose?.trim() || 'AnkiGen Hub'}
+                />
+              )}
+              {selected.source === 'slides-occlusion' && (
+                <SaveToAnkiButton
+                  saveCards={async (deckName) => {
+                    const cards = await getAnkiOcclusionCardsForSelected()
+                    await ensureImageOcclusionModelAvailable()
+                    await ensureDeckExists(deckName)
+                    await addOcclusionCardsToAnki(deckName, cards)
+                  }}
                   defaultDeckName={selected.purpose?.trim() || 'AnkiGen Hub'}
                 />
               )}
@@ -104,8 +144,8 @@ export default function HistoryLayout({ records }: { records: HistoryRecord[] })
 
           {selected.source === 'slides-occlusion' && (
             <p className="mb-3 text-xs text-text-secondary">
-              Image Occlusion 需要在 Anki 裡手動畫遮蓋範圍，暫不支援直接存入 Anki，請用下方每張卡片的下載連結
-              + CSV。
+              Image Occlusion 卡片存入 Anki 後還沒有真正的遮罩範圍，請在 Anki 打開每一張筆記，用內建的遮罩編輯器
+              畫出實際的遮蓋範圍（跟用 CSV 手動匯入的結果一樣，只是省了手動匯入這一步）。
             </p>
           )}
 

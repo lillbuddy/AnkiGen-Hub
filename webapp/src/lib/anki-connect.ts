@@ -138,3 +138,75 @@ export async function addCardsToAnki(deckName: string, cards: AnkiCardInput[]): 
     throw new Error('Anki 沒有成功建立任何卡片，請確認 Anki 沒有顯示錯誤訊息。')
   }
 }
+
+// Anki 內建的 Image Occlusion 筆記類型（Anki 23.10+ 才有），跟上面「AnkiGen Hub
+// 選擇題」不一樣：這是 Anki 本身內建、遮罩編輯器是內部特殊實作，沒辦法用
+// createModel 生出來，只能檢查存不存在。
+const IMAGE_OCCLUSION_MODEL_NAME = 'Image Occlusion'
+
+export async function ensureImageOcclusionModelAvailable(): Promise<void> {
+  const client = getClient()
+  const existingModels = await client.model.modelNames()
+  if (!existingModels.includes(IMAGE_OCCLUSION_MODEL_NAME)) {
+    throw new Error(
+      '你的 Anki 沒有內建的「Image Occlusion」筆記類型，請先把 Anki 更新到 23.10（含）以上的版本。'
+    )
+  }
+}
+
+export interface AnkiOcclusionCardInput {
+  filename: string
+  notes: string
+  image: { filename: string; base64: string }
+}
+
+// Occlusion 欄位其實是 cloze 欄位（卡片模板用 {{cloze:Occlusion}}），Anki 用
+// 裡面有沒有 {{c1::...}} 這種 cloze 標記來決定要不要產生卡片——純文字的提示字
+// 樣（例如「尚未框選：xxx」）沒有 cloze 標記，Anki 會直接拒絕整張筆記（實際
+// 測試證實：canAddNotesWithErrorDetail 回報 "cannot create note for unknown
+// reason"）。遮罩形狀資料的語法是跟 Anki 原始碼（rslib/src/image_occlusion/
+// imageocclusion.rs 的測試）核對過的：{{c1::rect:left=L:top=T:width=W:height=H}}，
+// 座標是相對圖片尺寸的比例（0~1），不是像素。這裡先給一個置中、佔一半大小的
+// 預設遮罩範圍，讓使用者打開筆記時看到看得見、位置合理的起點，再自己調整；
+// 跟現有「匯出 CSV 手動匯入」那條路徑最後需要使用者自己畫遮罩是同一件事，只是
+// 起點從完全空白變成有一個可以直接拖曳調整的預設框。
+const DEFAULT_OCCLUSION_SHAPE = '{{c1::rect:left=0.25:top=0.25:width=0.5:height=0.5}}'
+
+// 欄位順序固定是 Occlusion、Image、Header、Back Extra、Comments（跟現有 CSV
+// 匯出用的順序一致），用 modelFieldNames 動態抓真正的欄位名稱、照順序對應，
+// 比自己寫死欄位名稱字串更能適應不同 Anki 版本可能的細微差異。
+export async function addOcclusionCardsToAnki(
+  deckName: string,
+  cards: AnkiOcclusionCardInput[]
+): Promise<void> {
+  const client = getClient()
+  const fieldNames = await client.model.modelFieldNames({ modelName: IMAGE_OCCLUSION_MODEL_NAME })
+  const imageFieldName = fieldNames[1] ?? 'Image'
+
+  const notes = cards.map((card) => {
+    const values = [
+      DEFAULT_OCCLUSION_SHAPE,
+      '',
+      `尚未框選「${card.filename}」，請調整這個遮蓋範圍的位置與大小`,
+      card.notes,
+      '',
+    ]
+    const fields: Record<string, string> = {}
+    fieldNames.forEach((name, i) => {
+      fields[name] = values[i] ?? ''
+    })
+
+    return {
+      deckName,
+      modelName: IMAGE_OCCLUSION_MODEL_NAME,
+      fields,
+      options: { allowDuplicate: true },
+      picture: [{ filename: card.image.filename, data: card.image.base64, fields: [imageFieldName] }],
+    }
+  })
+
+  const result = await client.note.addNotes({ notes })
+  if (!result || result.every((id) => id === null)) {
+    throw new Error('Anki 沒有成功建立任何卡片，請確認 Anki 沒有顯示錯誤訊息。')
+  }
+}

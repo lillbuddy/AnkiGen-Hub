@@ -1,27 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  addCardsToAnki,
-  checkAnkiConnectAndRequestPermission,
-  ensureAnkiGenModelExists,
-  ensureDeckExists,
-  type AnkiCardInput,
-} from '@/lib/anki-connect'
+import { checkAnkiConnectAndRequestPermission } from '@/lib/anki-connect'
 
-// 三個呼叫端（文字選擇題、圖片標記工具、歷史紀錄）的卡片資料形狀都不一樣，圖片
-// 來源也不同（本機 File、抽屜沿用、Google Drive）。這個元件只負責「按一下 ->
-// 呼叫 AnkiConnect -> 顯示結果」，實際怎麼組出 AnkiCardInput[]（要不要先抓圖片
-// 轉 base64）交給呼叫端的 getCards，按下按鈕才會呼叫，避免使用者根本沒點
-// 「存入 Anki」也白白抓一次圖片。牌組名稱直接沿用呼叫端傳進來的用途標籤，不用
-// 使用者另外再填一次。
+// 四個呼叫端（文字選擇題、圖片選擇題、Image Occlusion、歷史紀錄）的卡片資料
+// 形狀、筆記類型、圖片來源都不一樣，這個元件不管這些細節，只負責「按一下 ->
+// 檢查 AnkiConnect -> 呼叫呼叫端傳進來的 saveCards -> 顯示結果」。實際要用哪個
+// 筆記類型、怎麼組出卡片資料（要不要先抓圖片轉 base64）都交給呼叫端的
+// saveCards，按下按鈕才會呼叫，避免使用者根本沒點「存入 Anki」也白白抓一次圖片。
+// 牌組名稱直接沿用呼叫端傳進來的用途標籤，不用使用者另外再填一次。
 export default function SaveToAnkiButton({
-  getCards,
+  saveCards,
   defaultDeckName = 'AnkiGen Hub',
   size = 'sm',
   onTrigger,
 }: {
-  getCards: () => Promise<AnkiCardInput[]>
+  saveCards: (deckName: string) => Promise<void>
   defaultDeckName?: string
   // 讓呼叫端可以跟旁邊的按鈕對齊高度：mcq 頁面和歷史紀錄的同排按鈕是 btn-sm，
   // slides 頁面的同排按鈕沒有加 btn-sm（比較大顆），兩邊都要能對上。
@@ -62,10 +56,7 @@ export default function SaveToAnkiButton({
     }
 
     try {
-      const cards = await getCards()
-      await ensureAnkiGenModelExists()
-      await ensureDeckExists(deckName)
-      await addCardsToAnki(deckName, cards)
+      await saveCards(deckName)
       setMessage({ type: 'ok', text: `已成功存入 Anki 的「${deckName}」牌組！` })
     } catch (error) {
       setMessage({
