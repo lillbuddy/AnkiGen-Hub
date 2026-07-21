@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import DrawerIndicator from "./drawer-indicator";
+import HelpGuideButton from "./help-guide-button";
 import SiteHeader from "./site-header";
 import SiteFooter from "./site-footer";
 
@@ -44,6 +45,7 @@ export default function RootLayout({
         <div className="relative flex flex-1 flex-col">{children}</div>
         <SiteFooter />
         <DrawerIndicator />
+        <HelpGuideButton />
       </body>
     </html>
   );
