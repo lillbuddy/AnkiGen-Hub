@@ -760,7 +760,17 @@ export default function SlidesWizardPage() {
                         </table>
                       </div>
 
-                      <div className="mt-3 flex items-center justify-between flex-wrap gap-3">
+                      <div className="mt-3">
+                        <label className="field-label">🏷️ 這批卡片的用途標籤</label>
+                        <input
+                          placeholder="例如：藥理學期中考重點——這裡填的內容會標註這份卡組的用途，方便之後在歷史紀錄搜尋，也會是存入 Anki 時預設的牌組名稱"
+                          value={purpose}
+                          onChange={(e) => setPurpose(e.target.value)}
+                          className="field-input mb-3"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between flex-wrap gap-3">
                         <span className="instruction-text">
                           {includedImages.length === 0
                             ? '先選取圖片並勾選納入匯出，這裡就會自動整理成選擇題。'
@@ -821,7 +831,17 @@ export default function SlidesWizardPage() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="mt-3 flex items-center justify-between flex-wrap gap-3">
+                      <div className="mt-3">
+                        <label className="field-label">🏷️ 這批卡片的用途標籤</label>
+                        <input
+                          placeholder="例如：藥理學期中考重點——這裡填的內容會標註這份卡組的用途，方便之後在歷史紀錄搜尋"
+                          value={purpose}
+                          onChange={(e) => setPurpose(e.target.value)}
+                          className="field-input mb-3"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between flex-wrap gap-3">
                         <span className="instruction-text">
                           {includedImages.length === 0 ? '先選取圖片並勾選納入匯出，這裡就會自動整理。' : ''}
                         </span>
@@ -838,27 +858,6 @@ export default function SlidesWizardPage() {
                         Image Occlusion 需要在 Anki 裡手動畫遮蓋範圍，暫不支援直接存入 Anki，請用上面的 CSV +
                         圖片。
                       </p>
-                    </div>
-                  )}
-
-                  {mode === 'mcq' && (
-                    <div className="mt-3">
-                      <input
-                        placeholder="這批卡片是為了什麼而做的？（選填）"
-                        value={purpose}
-                        onChange={(e) => setPurpose(e.target.value)}
-                        className="field-input"
-                      />
-                    </div>
-                  )}
-                  {mode === 'occlusion' && (
-                    <div className="mt-3">
-                      <input
-                        placeholder="這批卡片是為了什麼而做的？（選填）"
-                        value={purpose}
-                        onChange={(e) => setPurpose(e.target.value)}
-                        className="field-input"
-                      />
                     </div>
                   )}
 

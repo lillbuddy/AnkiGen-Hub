@@ -312,7 +312,25 @@ D. 第一心音會變弱
               <h2>
                 ✅ 2. 預覽與修改解析結果 ({cards.length} 題)
               </h2>
-              <div className="row-actions">
+            </div>
+            <div className="panel-body">
+              {fromDrawer && (
+                <div className="notice-box mb-3">
+                  <div>
+                    已經從抽屜載入 {cards.length} 張卡片。如果想幫這份卡組再補充新的題目，可以貼上文字內容重新解析，新解析出來的卡片會加進下面的列表一起處理。
+                  </div>
+                </div>
+              )}
+              <label className="field-label">
+                🏷️ 這批卡片的用途標籤
+              </label>
+              <input
+                placeholder="例如：藥理學期中考重點——這裡填的內容會標註這份卡組的用途，方便之後在歷史紀錄搜尋，也會是存入 Anki 時預設的牌組名稱"
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+                className="field-input mb-3"
+              />
+              <div className="row-actions mb-3">
                 <button onClick={handleSave} disabled={saving} className="btn btn-secondary btn-sm">
                   {saving ? '存入中...' : '🔖 存入紀錄'}
                 </button>
@@ -324,21 +342,6 @@ D. 第一心音會變弱
                   defaultDeckName={purpose || 'AnkiGen Hub'}
                 />
               </div>
-            </div>
-            <div className="panel-body">
-              {fromDrawer && (
-                <div className="notice-box mb-3">
-                  <div>
-                    已經從抽屜載入 {cards.length} 張卡片。如果想幫這份卡組再補充新的題目，可以貼上文字內容重新解析，新解析出來的卡片會加進下面的列表一起處理。
-                  </div>
-                </div>
-              )}
-              <input
-                placeholder="這批卡片是為了什麼而做的？（選填，存入紀錄時會用到）"
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-                className="field-input mb-3"
-              />
               <div className="table-container">
                 <table className="editable-table">
                   <thead>
