@@ -128,7 +128,8 @@ export default function SiteHeader() {
               </button>
             </>
           )}
-          {ready && !user && !isLogin && (
+          <span className="hidden text-xs text-text-secondary sm:inline">本網站並非 Anki 官方網站</span>
+          {ready && !user && !isLogin && !isHome && (
             <Link href="/login" className="btn btn-primary btn-sm">
               登入
             </Link>

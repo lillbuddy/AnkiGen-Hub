@@ -10,10 +10,12 @@ import {
   type ImageDrawerCard,
   type TextDrawerCard,
 } from '@/lib/drawer-storage'
+import { useCurrentUser } from '@/lib/use-current-user'
 import DrawerCardEditor from './drawer-card-editor'
 import TextCardEditor from './text-card-editor'
 
 export default function DrawerPage() {
+  const { user, ready: userReady } = useCurrentUser()
   const [cards, setCards] = useState<AnyDrawerCard[]>([])
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
 
@@ -22,6 +24,19 @@ export default function DrawerPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCards(getDrawerCards())
   }, [])
+
+  // 抽屜內容是本機 localStorage，不是跟帳號綁定的資料，同一台裝置換人登入就可能
+  // 看到上一個使用者留下的卡片，所以沒登入時直接不顯示內容，避免隱私外洩。
+  if (userReady && !user) {
+    return (
+      <main className="mx-auto max-w-2xl p-6 text-center">
+        <p>請先登入才能使用抽屜。</p>
+        <Link href="/login" className="text-primary underline">
+          前往登入
+        </Link>
+      </main>
+    )
+  }
 
   // 選取的卡片被移除時，自動退回目前列表的第一張，避免畫面卡在已經不存在的卡片上。
   const selected = cards.find((c) => c.key === selectedKey) ?? cards[0] ?? null
