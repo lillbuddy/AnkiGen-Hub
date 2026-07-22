@@ -10,7 +10,7 @@ import { callGeminiJson } from '@/lib/gemini-client'
 import type { ClozeCard } from '@/lib/history-types'
 import {
   addClozeCardsToAnki,
-  ensureClozeModelAvailable,
+  ensureAnkiGenClozeModelExists,
   ensureDeckExists,
   type AnkiClozeCardInput,
 } from '@/lib/anki-connect'
@@ -289,7 +289,7 @@ export default function ClozeToolPage() {
                 </button>
                 <SaveToAnkiButton
                   saveCards={async (deckName) => {
-                    await ensureClozeModelAvailable()
+                    await ensureAnkiGenClozeModelExists()
                     await ensureDeckExists(deckName)
                     await addClozeCardsToAnki(deckName, ankiCards)
                   }}
@@ -306,14 +306,14 @@ export default function ClozeToolPage() {
                 </p>
               )}
               <p className="instruction-text mb-2">
-                「例句」裡的 **文字** 標記代表會被挖空的部分，可以直接編輯調整要挖空哪一段。
+                「例句」裡用 <code>**</code> 包住的文字（例如 <code>**word**</code>）代表會被挖空的部分，這是我們自己的標記語法（不是 Markdown 粗體），可以直接編輯調整要挖空哪一段。
               </p>
               <div className="table-container">
                 <table className="editable-table">
                   <thead>
                     <tr>
                       <th>單字</th>
-                      <th>例句（** 標記挖空處）</th>
+                      <th>例句（用 ** 包住要挖空的部分）</th>
                       <th>備註</th>
                       <th>操作</th>
                     </tr>

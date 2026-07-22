@@ -13,8 +13,8 @@ import {
   addCardsToAnki,
   addClozeCardsToAnki,
   addOcclusionCardsToAnki,
+  ensureAnkiGenClozeModelExists,
   ensureAnkiGenModelExists,
-  ensureClozeModelAvailable,
   ensureDeckExists,
   ensureImageOcclusionModelAvailable,
   fetchImageAsBase64,
@@ -152,7 +152,7 @@ export default function HistoryLayout({ records }: { records: HistoryRecord[] })
                 <SaveToAnkiButton
                   saveCards={async (deckName) => {
                     const cards = getAnkiClozeCardsForSelected()
-                    await ensureClozeModelAvailable()
+                    await ensureAnkiGenClozeModelExists()
                     await ensureDeckExists(deckName)
                     await addClozeCardsToAnki(deckName, cards)
                   }}

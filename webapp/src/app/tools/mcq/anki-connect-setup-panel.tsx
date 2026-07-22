@@ -3,11 +3,19 @@
 import { useState } from 'react'
 
 // AnkiConnect 預設的網址白名單只信任 http://localhost，這個網站部署後的網域
-// 不在裡面，第一次使用「存入 Anki」時瀏覽器端的請求會被擋下來，所以直接把
-// 「改成 *」的設定內容準備好讓使用者複製，比只用文字描述更不容易出錯。
-const CORS_CONFIG_SNIPPET = `"webCorsOriginList": [
-    "*"
-]`
+// 不在裡面，第一次使用「存入 Anki」時瀏覽器端的請求會被擋下來。這裡貼完整版
+// 設定檔（而不是只有 webCorsOriginList 這一個欄位），讓使用者能直接對照自己
+// AnkiConnect 設定視窗裡看到的完整內容，不會搞不清楚要把片段貼在哪裡。
+const CORS_CONFIG_SNIPPET = `{
+    "apiKey": null,
+    "apiLogPath": null,
+    "ignoreOriginList": [],
+    "webBindAddress": "127.0.0.1",
+    "webBindPort": 8765,
+    "webCorsOriginList": [
+        "*"
+    ]
+}`
 
 export default function AnkiConnectSetupPanel() {
   const [copied, setCopied] = useState(false)

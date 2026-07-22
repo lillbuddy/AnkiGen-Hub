@@ -3,7 +3,6 @@
 // 使用者「自己這台電腦」，我們的 Vercel 伺服器連不到使用者的 localhost。
 import { YankiConnect } from 'yanki-connect/standalone'
 import { convertMathDelimiters } from '@/lib/convert-math-delimiters'
-import { toAnkiClozeSyntax } from '@/lib/cloze-markup'
 import {
   ANKI_BACK_TEMPLATE,
   ANKI_CSS_TEMPLATE,
@@ -11,6 +10,13 @@ import {
   ANKI_FRONT_TEMPLATE,
   ANKI_MODEL_NAME,
 } from '@/lib/anki-mcq-templates'
+import {
+  ANKI_CLOZE_BACK_TEMPLATE,
+  ANKI_CLOZE_CSS_TEMPLATE,
+  ANKI_CLOZE_FIELDS,
+  ANKI_CLOZE_FRONT_TEMPLATE,
+  ANKI_CLOZE_MODEL_NAME,
+} from '@/lib/anki-cloze-templates'
 function getClient() {
   return new YankiConnect()
 }
@@ -140,17 +146,21 @@ export async function addCardsToAnki(deckName: string, cards: AnkiCardInput[]): 
   }
 }
 
-// Anki 內建的 Cloze 筆記類型，從很早的版本就有、非常成熟穩定，不像 Image
-// Occlusion 是新功能，理論上每個 Anki 都內建，這裡純粹防禦性檢查，不像選擇題
-// 那樣需要 createModel 自己建立。
-const CLOZE_MODEL_NAME = 'Cloze'
-
-export async function ensureClozeModelAvailable(): Promise<void> {
+// 確保「AnkiGen Hub 克漏字」這個自訂筆記類型存在，不存在就用現有的欄位/模板/CSS
+// 建立——跟選擇題一樣是我們自己的筆記類型（不是 Anki 內建的 Cloze），這樣 Sentence
+// 欄位可以直接存放 **word** 原文，由我們自己的模板 script 解析成跟網站模擬器一致
+// 的挖空/答案樣式，不受 Anki 內建 Cloze 類型只認得 {{c1::}} 語法的限制。
+export async function ensureAnkiGenClozeModelExists(): Promise<void> {
   const client = getClient()
   const existingModels = await client.model.modelNames()
-  if (!existingModels.includes(CLOZE_MODEL_NAME)) {
-    throw new Error('你的 Anki 沒有內建的「Cloze」筆記類型，這是 Anki 本身的問題，請確認 Anki 安裝是否正常。')
-  }
+  if (existingModels.includes(ANKI_CLOZE_MODEL_NAME)) return
+
+  await client.model.createModel({
+    modelName: ANKI_CLOZE_MODEL_NAME,
+    inOrderFields: ANKI_CLOZE_FIELDS.map((f) => f.name),
+    css: ANKI_CLOZE_CSS_TEMPLATE,
+    cardTemplates: [{ Name: '克漏字', Front: ANKI_CLOZE_FRONT_TEMPLATE, Back: ANKI_CLOZE_BACK_TEMPLATE }],
+  })
 }
 
 export interface AnkiClozeCardInput {
@@ -159,19 +169,18 @@ export interface AnkiClozeCardInput {
   notes: string
 }
 
-// 欄位順序固定是 Text、Back Extra（跟現有 CSV 匯出用的順序一致），用
-// modelFieldNames 動態抓真正的欄位名稱、照順序對應，比自己寫死欄位名稱字串
-// 更能適應不同 Anki 版本可能的細微差異。Back Extra 一律帶上單字原形，避免
-// 例句用了詞形變化的形式（例如 running）反而看不出原本要背的單字（run）。
+// 欄位順序固定是 Sentence、Word、Explanation（跟現有 CSV 匯出用的順序一致），用
+// modelFieldNames 動態抓真正的欄位名稱、照順序對應，比自己寫死欄位名稱字串更能
+// 適應不同 Anki 版本可能的細微差異。Sentence 直接存放 **word** 原文，不需要轉換
+// 成 Anki 的 {{c1::}} 語法——這是自訂筆記類型才有的好處，一般筆記類型不論欄位
+// 內容是什麼一律固定產生 1 張卡片，不像 Anki 內建 Cloze 類型會因為欄位裡沒有真的
+// cloze 標記就整張筆記靜默被拒收。
 export async function addClozeCardsToAnki(deckName: string, cards: AnkiClozeCardInput[]): Promise<void> {
   const client = getClient()
-  const fieldNames = await client.model.modelFieldNames({ modelName: CLOZE_MODEL_NAME })
+  const fieldNames = await client.model.modelFieldNames({ modelName: ANKI_CLOZE_MODEL_NAME })
 
   const notes = cards.map((card) => {
-    const values = [
-      toAnkiClozeSyntax(card.sentence),
-      card.notes ? `${card.word}：${card.notes}` : card.word,
-    ]
+    const values = [card.sentence, card.word, card.notes]
     const fields: Record<string, string> = {}
     fieldNames.forEach((name, i) => {
       fields[name] = values[i] ?? ''
@@ -179,7 +188,7 @@ export async function addClozeCardsToAnki(deckName: string, cards: AnkiClozeCard
 
     return {
       deckName,
-      modelName: CLOZE_MODEL_NAME,
+      modelName: ANKI_CLOZE_MODEL_NAME,
       fields,
       options: { allowDuplicate: true },
     }

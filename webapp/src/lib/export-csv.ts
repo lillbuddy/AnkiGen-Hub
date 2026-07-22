@@ -2,7 +2,6 @@
 // 不需要額外打伺服器 API——歷史紀錄頁面本來就已經有完整的卡片資料。
 import type { ClozeCard, McqCard, SlidesMcqCard } from '@/lib/history-types'
 import { convertMathDelimiters } from '@/lib/convert-math-delimiters'
-import { toAnkiClozeSyntax } from '@/lib/cloze-markup'
 
 function escapeCsvField(value: string | number | boolean | null | undefined): string {
   const str = String(value ?? '')
@@ -66,18 +65,9 @@ export function buildSlidesOcclusionCsv(
     .join('')
 }
 
-// 克漏字卡片（Anki 內建的 Cloze 筆記類型）：[Text(含 {{c1::}} 標記), Back Extra]
-// Back Extra 一律帶上單字原形，避免例句用了詞形變化的形式（例如 running），
-// 背面反而看不出原本要背的單字（run）。
+// 克漏字卡片（AnkiGen Hub 自訂筆記類型）：[Sentence(含 **word** 原文標記), Word, Explanation]
 export function buildClozeCsv(cards: ClozeCard[]): string {
-  return cards
-    .map((card) =>
-      csvRow([
-        toAnkiClozeSyntax(card.sentence),
-        card.notes ? `${card.word}：${card.notes}` : card.word,
-      ])
-    )
-    .join('')
+  return cards.map((card) => csvRow([card.sentence, card.word, card.notes])).join('')
 }
 
 export function downloadCsv(filename: string, content: string) {
