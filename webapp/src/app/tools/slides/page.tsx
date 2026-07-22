@@ -786,6 +786,10 @@ export default function SlidesWizardPage() {
                           ❓ 獲取 Key
                         </a>
                       </div>
+                      <p className="instruction-text mb-3">
+                        💡 如果你的 API Key 是免費申請的，建議選用 <strong>gemini-3.1-flash-lite</strong>
+                        （額度限制較寬鬆）；但 lite 版本能處理的資料量較小，單次上傳的圖片不要太多，以免生成失敗或跑不出結果，建議分批處理。
+                      </p>
 
                       <div className="field-row">
                         <label>干擾選項詞彙表 (.md，選填)</label>

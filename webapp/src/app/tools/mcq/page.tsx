@@ -314,6 +314,10 @@ export default function McqToolPage() {
                 ❓ 獲取 Key
               </a>
             </div>
+            <p className="instruction-text mb-4">
+              💡 如果你的 API Key 是免費申請的，建議選用 <strong>gemini-3.1-flash-lite</strong>
+              （額度限制較寬鬆）；但 lite 版本能處理的資料量較小，單次貼上的內容不要太多，以免生成失敗或跑不出結果，建議分批處理。
+            </p>
 
             <textarea
               placeholder="貼上文字內容，例如：
