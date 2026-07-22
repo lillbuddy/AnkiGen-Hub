@@ -15,6 +15,7 @@ import {
   type AnkiClozeCardInput,
 } from '@/lib/anki-connect'
 import SaveToAnkiButton from '@/components/save-to-anki-button'
+import AnkiConnectSetupPanel from '../mcq/anki-connect-setup-panel'
 import ClozeSimulator from './cloze-simulator'
 
 // 使用者還沒生成任何卡片時，模擬器先顯示一張範例卡片，讓人一眼看懂這個功能在做什麼。
@@ -338,7 +339,7 @@ export default function ClozeToolPage() {
                         <td>
                           <textarea
                             className="cell-input"
-                            rows={2}
+                            rows={5}
                             value={card.sentence}
                             onChange={(e) => updateCard(card.localId, { sentence: e.target.value })}
                           />
@@ -357,7 +358,7 @@ export default function ClozeToolPage() {
                               className="btn btn-secondary btn-xs"
                               title="即時模擬預覽"
                             >
-                              👁️
+                              🔍
                             </button>
                             <button
                               onClick={() => removeCard(index)}
@@ -390,6 +391,7 @@ export default function ClozeToolPage() {
           key={previewCard === SAMPLE_PREVIEW_CARD ? 'sample' : previewIndex}
           card={previewCard}
         />
+        <AnkiConnectSetupPanel />
       </section>
 
       {/* 讓模擬器能比照 Anki 內部渲染數學公式，而不是顯示未渲染的原始語法。 */}

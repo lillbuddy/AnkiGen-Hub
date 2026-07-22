@@ -26,7 +26,7 @@ import {
 import SlideCard from './slide-card'
 import McqEditPanel from './mcq-edit-panel'
 import SlidesSimulator from './slides-simulator'
-import AnkiTemplatePanel from '../mcq/anki-template-panel'
+import AnkiConnectSetupPanel from '../mcq/anki-connect-setup-panel'
 import SaveToAnkiButton from '@/components/save-to-anki-button'
 
 const DISTRACTOR_TARGET_FIELDS = ['optionB', 'optionC', 'optionD'] as const
@@ -1047,7 +1047,7 @@ export default function SlidesWizardPage() {
 
               {mode === 'mcq' ? (
                 <div className="mt-4">
-                  <AnkiTemplatePanel />
+                  <AnkiConnectSetupPanel />
                 </div>
               ) : (
                 <div className="card-panel mt-4">

@@ -12,7 +12,7 @@ import type { McqCard } from '@/lib/history-types'
 import { addCardsToAnki, ensureAnkiGenModelExists, ensureDeckExists, type AnkiCardInput } from '@/lib/anki-connect'
 import SaveToAnkiButton from '@/components/save-to-anki-button'
 import AnkiSimulator from './anki-simulator'
-import AnkiTemplatePanel from './anki-template-panel'
+import AnkiConnectSetupPanel from './anki-connect-setup-panel'
 
 interface CardState extends McqCard {
   localId: string
@@ -394,12 +394,12 @@ D. 第一心音會變弱
                 <table className="editable-table">
                   <thead>
                     <tr>
-                      <th>題號</th>
-                      <th>題目</th>
-                      <th>類型</th>
-                      <th>選項 (A-F)</th>
-                      <th>答案</th>
-                      <th>操作</th>
+                      <th style={{ width: '5%' }}>題號</th>
+                      <th style={{ width: '32%' }}>題目</th>
+                      <th style={{ width: '10%' }}>類型</th>
+                      <th style={{ width: '33%' }}>選項 (A-F)</th>
+                      <th style={{ width: '8%' }}>答案</th>
+                      <th style={{ width: '12%' }}>操作</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -417,7 +417,7 @@ D. 第一心音會變弱
                         <td>
                           <textarea
                             className="cell-input"
-                            rows={2}
+                            rows={5}
                             value={card.questionText}
                             onChange={(e) =>
                               updateCard(card.localId, { questionText: e.target.value })
@@ -465,7 +465,7 @@ D. 第一心音會變弱
                               className="btn btn-secondary btn-xs"
                               title="即時模擬預覽"
                             >
-                              👁️
+                              🔍
                             </button>
                             <button
                               onClick={() => removeCard(index)}
@@ -495,7 +495,7 @@ D. 第一心音會變弱
       {/* 右欄：卡片預覽與 Anki 模板設定 */}
       <section className="flex flex-col gap-6">
         <AnkiSimulator key={previewCard === SAMPLE_PREVIEW_CARD ? 'sample' : previewIndex} card={previewCard} />
-        <AnkiTemplatePanel />
+        <AnkiConnectSetupPanel />
       </section>
 
       {/* 讓模擬器能比照 Anki 內部渲染數學公式，而不是顯示未渲染的原始語法。
