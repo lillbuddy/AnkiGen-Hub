@@ -29,7 +29,16 @@ export interface OcclusionCard extends DriveImageFields {
   notes: string
 }
 
-export type AnyCard = McqCard | SlidesMcqCard | OcclusionCard
+// ClozeCard：克漏字卡片（source = 'cloze'），給想背單字的使用者用。sentence 裡
+// 用 **文字** 標記要挖空的部分（見 cloze-markup.ts），word 是原始單字（不一定跟
+// 句子裡實際出現的詞形一樣，例如單字是 run、句子裡用 running）。
+export interface ClozeCard {
+  word: string
+  sentence: string
+  notes: string
+}
+
+export type AnyCard = McqCard | SlidesMcqCard | OcclusionCard | ClozeCard
 
 export interface HistoryRecord {
   id: string
@@ -44,4 +53,5 @@ export const SOURCE_LABELS: Record<string, string> = {
   mcq: '選擇題卡片',
   'slides-mcq': '圖片選擇題',
   'slides-occlusion': 'Image Occlusion',
+  cloze: '克漏字卡片',
 }

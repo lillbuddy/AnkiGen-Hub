@@ -1,7 +1,8 @@
 // 產生 Anki 可以匯入的 CSV（逗號分隔、每欄都加引號），純前端組字串，
 // 不需要額外打伺服器 API——歷史紀錄頁面本來就已經有完整的卡片資料。
-import type { McqCard, SlidesMcqCard } from '@/lib/history-types'
+import type { ClozeCard, McqCard, SlidesMcqCard } from '@/lib/history-types'
 import { convertMathDelimiters } from '@/lib/convert-math-delimiters'
+import { toAnkiClozeSyntax } from '@/lib/cloze-markup'
 
 function escapeCsvField(value: string | number | boolean | null | undefined): string {
   const str = String(value ?? '')
@@ -61,6 +62,20 @@ export function buildSlidesOcclusionCsv(
   return cards
     .map((card) =>
       csvRow([`尚未框選：${card.filename}`, `<img src="${card.filename}">`, '', card.notes, ''])
+    )
+    .join('')
+}
+
+// 克漏字卡片（Anki 內建的 Cloze 筆記類型）：[Text(含 {{c1::}} 標記), Back Extra]
+// Back Extra 一律帶上單字原形，避免例句用了詞形變化的形式（例如 running），
+// 背面反而看不出原本要背的單字（run）。
+export function buildClozeCsv(cards: ClozeCard[]): string {
+  return cards
+    .map((card) =>
+      csvRow([
+        toAnkiClozeSyntax(card.sentence),
+        card.notes ? `${card.word}：${card.notes}` : card.word,
+      ])
     )
     .join('')
 }

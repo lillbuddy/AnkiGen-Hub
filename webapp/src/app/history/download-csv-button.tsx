@@ -1,7 +1,13 @@
 'use client'
 
-import { buildMcqCsv, buildSlidesMcqCsv, buildSlidesOcclusionCsv, downloadCsv } from '@/lib/export-csv'
-import type { AnyCard, McqCard, OcclusionCard, SlidesMcqCard } from '@/lib/history-types'
+import {
+  buildClozeCsv,
+  buildMcqCsv,
+  buildSlidesMcqCsv,
+  buildSlidesOcclusionCsv,
+  downloadCsv,
+} from '@/lib/export-csv'
+import type { AnyCard, ClozeCard, McqCard, OcclusionCard, SlidesMcqCard } from '@/lib/history-types'
 
 export default function DownloadCsvButton({
   source,
@@ -16,6 +22,8 @@ export default function DownloadCsvButton({
       content = buildMcqCsv(cards as McqCard[])
     } else if (source === 'slides-occlusion') {
       content = buildSlidesOcclusionCsv(cards as OcclusionCard[])
+    } else if (source === 'cloze') {
+      content = buildClozeCsv(cards as ClozeCard[])
     } else {
       content = buildSlidesMcqCsv(cards as SlidesMcqCard[])
     }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import {
   SOURCE_LABELS,
+  type ClozeCard,
   type HistoryRecord,
   type McqCard,
   type OcclusionCard,
@@ -10,12 +11,15 @@ import {
 } from '@/lib/history-types'
 import {
   addCardsToAnki,
+  addClozeCardsToAnki,
   addOcclusionCardsToAnki,
   ensureAnkiGenModelExists,
+  ensureClozeModelAvailable,
   ensureDeckExists,
   ensureImageOcclusionModelAvailable,
   fetchImageAsBase64,
   type AnkiCardInput,
+  type AnkiClozeCardInput,
   type AnkiOcclusionCardInput,
 } from '@/lib/anki-connect'
 import DeleteHistoryButton from './delete-history-button'
@@ -24,6 +28,7 @@ import SaveToAnkiButton from '@/components/save-to-anki-button'
 import McqCardItem from './mcq-card-item'
 import HistoryCardItem from './history-card-item'
 import OcclusionCardItem from './occlusion-card-item'
+import ClozeCardItem from './cloze-card-item'
 
 function formatDate(isoString: string) {
   const d = new Date(isoString)
@@ -79,6 +84,11 @@ export default function HistoryLayout({ records }: { records: HistoryRecord[] })
         },
       }))
     )
+  }
+
+  function getAnkiClozeCardsForSelected(): AnkiClozeCardInput[] {
+    if (!selected || selected.source !== 'cloze') return []
+    return (selected.cards as ClozeCard[]).map((card) => ({ ...card }))
   }
 
   return (
@@ -138,6 +148,17 @@ export default function HistoryLayout({ records }: { records: HistoryRecord[] })
                   defaultDeckName={selected.purpose?.trim() || 'AnkiGen Hub'}
                 />
               )}
+              {selected.source === 'cloze' && (
+                <SaveToAnkiButton
+                  saveCards={async (deckName) => {
+                    const cards = getAnkiClozeCardsForSelected()
+                    await ensureClozeModelAvailable()
+                    await ensureDeckExists(deckName)
+                    await addClozeCardsToAnki(deckName, cards)
+                  }}
+                  defaultDeckName={selected.purpose?.trim() || 'AnkiGen Hub'}
+                />
+              )}
               <DeleteHistoryButton recordId={selected.id} />
             </div>
           </div>
@@ -161,6 +182,10 @@ export default function HistoryLayout({ records }: { records: HistoryRecord[] })
             {selected.source === 'slides-occlusion' &&
               (selected.cards as OcclusionCard[]).map((card, index) => (
                 <OcclusionCardItem key={index} card={card} />
+              ))}
+            {selected.source === 'cloze' &&
+              (selected.cards as ClozeCard[]).map((card, index) => (
+                <ClozeCardItem key={index} card={card} />
               ))}
           </div>
         </div>

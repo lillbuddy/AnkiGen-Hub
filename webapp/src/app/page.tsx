@@ -48,7 +48,7 @@ export default async function Home({
         </p>
       )}
 
-      <div className="mx-auto mb-6 grid max-w-2xl grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="mx-auto mb-6 grid max-w-4xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Link href="/tools/mcq" className="tool-card">
           <div className="tool-icon">📝</div>
           <h2 className="mb-2 font-display text-lg font-bold text-text-primary">文字選擇題產生器</h2>
@@ -66,6 +66,16 @@ export default async function Home({
             Occlusion，下載 CSV 或直接存入 Anki。
           </p>
           <span className="tool-cta">開始標記 →</span>
+        </Link>
+
+        <Link href="/tools/cloze" className="tool-card">
+          <div className="tool-icon">🔤</div>
+          <h2 className="mb-2 font-display text-lg font-bold text-text-primary">克漏字卡片產生器</h2>
+          <p className="flex-1 text-sm text-text-secondary">
+            輸入想背的單字清單，AI 會針對每個單字生成一句例句並自動挖空，做成 Anki
+            克漏字卡片，特別適合背單字的使用者。
+          </p>
+          <span className="tool-cta">開始背單字 →</span>
         </Link>
       </div>
 

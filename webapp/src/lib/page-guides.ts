@@ -9,8 +9,8 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
   '/': {
     title: '首頁',
     items: [
-      '這裡有兩個工具：「文字選擇題產生器」把貼上的文字內容變成選擇題卡片；「圖片標記工具」把圖片變成圖片選擇題或 Image Occlusion 卡片。',
-      '不需要登入就能使用兩個工具、下載 CSV，或直接存入 Anki。',
+      '這裡有三個工具：「文字選擇題產生器」把貼上的文字內容變成選擇題卡片；「圖片標記工具」把圖片變成圖片選擇題或 Image Occlusion 卡片；「克漏字卡片產生器」把想背的單字變成克漏字卡片。',
+      '不需要登入就能使用三個工具、下載 CSV，或直接存入 Anki。',
       '想把卡組存進「歷史紀錄」方便之後查找，或是讓圖片標記工具串接 Google Drive，才需要登入。',
     ],
   },
@@ -34,6 +34,17 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
       '使用「存入 Anki」前，請先確認電腦上的 Anki 已經開啟，並且已安裝、啟用 AnkiConnect 這個附加元件，按下按鈕後就會直接在 Anki 裡建立卡片。',
     ],
   },
+  '/tools/cloze': {
+    title: '克漏字卡片產生器',
+    items: [
+      '一行輸入一個要背的單字（也可以用逗號分隔多個單字），並輸入 Gemini API Key——輸入過一次會自動記住，下次不用再打。',
+      '按下「AI 生成例句卡片」，AI 會針對每個單字各自生成一句例句，並自動挖空成克漏字卡片，解析出來的卡片可以直接在表格裡編輯。',
+      '「例句」欄位裡的 **文字** 標記代表會被挖空的部分，可以直接編輯調整要挖空哪一段（例如單字詞形有變化時）。',
+      '填寫「這批卡片的用途標籤」：這段文字會用來標註卡組用途，方便之後在歷史紀錄搜尋，也會是存入 Anki 時的牌組名稱。',
+      '完成後可以「存入紀錄」「匯出 CSV」或「存入 Anki」，三個按鈕都會順便自動存入歷史紀錄（登入後才會生效）。',
+      '使用「存入 Anki」前，請先確認電腦上的 Anki 已經開啟，並且已安裝、啟用 AnkiConnect 這個附加元件，按下按鈕後就會直接在 Anki 裡建立卡片（使用 Anki 內建的 Cloze 筆記類型）。',
+    ],
+  },
   '/history': {
     title: '歷史紀錄',
     items: [
@@ -55,7 +66,7 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
     title: '登入',
     items: [
       '登入後可以使用「歷史紀錄」保存卡組、串接 Google Drive 保存圖片。',
-      '文字/圖片選擇題產生、下載 CSV、存入 Anki 這些功能不需要登入就能使用。',
+      '文字/圖片選擇題、克漏字卡片產生、下載 CSV、存入 Anki 這些功能不需要登入就能使用。',
       '如果剛完成註冊卻登入失敗，記得先到信箱點擊確認連結完成驗證（也檢查垃圾郵件匣）。',
     ],
   },
@@ -64,7 +75,7 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
     items: [
       '填寫 Email 和密碼即可註冊帳號。',
       '註冊成功後，系統會寄一封確認信到你的信箱，要點擊信裡的確認連結完成驗證才能登入。',
-      '不登入也能使用文字/圖片選擇題產生器的核心功能，只有歷史紀錄和 Google Drive 相關功能才需要帳號。',
+      '不登入也能使用文字/圖片選擇題、克漏字卡片產生器的核心功能，只有歷史紀錄和 Google Drive 相關功能才需要帳號。',
     ],
   },
 }
@@ -72,7 +83,7 @@ export const PAGE_GUIDES: Record<string, PageGuide> = {
 export const DEFAULT_GUIDE: PageGuide = {
   title: '使用說明',
   items: [
-    'AnkiGen Hub 提供文字選擇題產生器和圖片標記工具，把筆記或圖片變成 Anki 卡片。',
+    'AnkiGen Hub 提供文字選擇題產生器、圖片標記工具、克漏字卡片產生器，把筆記、圖片或單字變成 Anki 卡片。',
     '不需要登入就能使用工具、下載 CSV 或直接存入 Anki；登入後可以使用歷史紀錄和 Google Drive。',
   ],
 }

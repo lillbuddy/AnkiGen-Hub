@@ -250,3 +250,22 @@
 .sim-explanation.sim-exp-wrong .sim-explanation-title {
   color: #b91c1c;
 }
+
+/* 克漏字卡片正面的挖空佔位符號，背面答案用底線+藍色標示出來 */
+.cloze-blank {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 4px;
+  background-color: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.cloze-answer {
+  font-weight: 700;
+  color: #14284A;
+  text-decoration: underline;
+  text-decoration-color: #3B6FC4;
+  text-underline-offset: 3px;
+}

@@ -3,6 +3,7 @@
 // 使用者「自己這台電腦」，我們的 Vercel 伺服器連不到使用者的 localhost。
 import { YankiConnect } from 'yanki-connect/standalone'
 import { convertMathDelimiters } from '@/lib/convert-math-delimiters'
+import { toAnkiClozeSyntax } from '@/lib/cloze-markup'
 import {
   ANKI_BACK_TEMPLATE,
   ANKI_CSS_TEMPLATE,
@@ -130,6 +131,57 @@ export async function addCardsToAnki(deckName: string, cards: AnkiCardInput[]): 
       picture: card.image
         ? [{ filename: card.image.filename, data: card.image.base64, fields: ['Question'] }]
         : undefined,
+    }
+  })
+
+  const result = await client.note.addNotes({ notes })
+  if (!result || result.every((id) => id === null)) {
+    throw new Error('Anki 沒有成功建立任何卡片，請確認 Anki 沒有顯示錯誤訊息。')
+  }
+}
+
+// Anki 內建的 Cloze 筆記類型，從很早的版本就有、非常成熟穩定，不像 Image
+// Occlusion 是新功能，理論上每個 Anki 都內建，這裡純粹防禦性檢查，不像選擇題
+// 那樣需要 createModel 自己建立。
+const CLOZE_MODEL_NAME = 'Cloze'
+
+export async function ensureClozeModelAvailable(): Promise<void> {
+  const client = getClient()
+  const existingModels = await client.model.modelNames()
+  if (!existingModels.includes(CLOZE_MODEL_NAME)) {
+    throw new Error('你的 Anki 沒有內建的「Cloze」筆記類型，這是 Anki 本身的問題，請確認 Anki 安裝是否正常。')
+  }
+}
+
+export interface AnkiClozeCardInput {
+  word: string
+  sentence: string
+  notes: string
+}
+
+// 欄位順序固定是 Text、Back Extra（跟現有 CSV 匯出用的順序一致），用
+// modelFieldNames 動態抓真正的欄位名稱、照順序對應，比自己寫死欄位名稱字串
+// 更能適應不同 Anki 版本可能的細微差異。Back Extra 一律帶上單字原形，避免
+// 例句用了詞形變化的形式（例如 running）反而看不出原本要背的單字（run）。
+export async function addClozeCardsToAnki(deckName: string, cards: AnkiClozeCardInput[]): Promise<void> {
+  const client = getClient()
+  const fieldNames = await client.model.modelFieldNames({ modelName: CLOZE_MODEL_NAME })
+
+  const notes = cards.map((card) => {
+    const values = [
+      toAnkiClozeSyntax(card.sentence),
+      card.notes ? `${card.word}：${card.notes}` : card.word,
+    ]
+    const fields: Record<string, string> = {}
+    fieldNames.forEach((name, i) => {
+      fields[name] = values[i] ?? ''
+    })
+
+    return {
+      deckName,
+      modelName: CLOZE_MODEL_NAME,
+      fields,
+      options: { allowDuplicate: true },
     }
   })
 
