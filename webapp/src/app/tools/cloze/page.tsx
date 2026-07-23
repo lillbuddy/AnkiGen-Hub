@@ -7,6 +7,7 @@ import { buildClozeCsv, downloadCsv } from '@/lib/export-csv'
 import { useCurrentUser } from '@/lib/use-current-user'
 import { getSavedGeminiApiKey, saveGeminiApiKey } from '@/lib/gemini-key-storage'
 import { callGeminiJson } from '@/lib/gemini-client'
+import { decodeText } from '@/lib/text-obfuscation'
 import type { ClozeCard } from '@/lib/history-types'
 import {
   addClozeCardsToAnki,
@@ -30,23 +31,13 @@ const SAMPLE_WORDS = `ubiquitous
 ephemeral
 pragmatic`
 
-const PROMPT_TEMPLATE = (words: string) => `你是一個幫忙把單字轉換成 Anki 克漏字（Cloze）卡片的助手。請針對下面每一個單字，各自生成一句自然、有上下文語境的例句，並且用兩個星號 ** 把「這個單字在句子中實際出現的部分」框起來（例如單字是 run，句子裡用了 running，就框 **running**）。用 JSON 陣列格式回傳，不要有其他文字或說明。
+// 跟 anki-*-templates.ts 同樣的考量：把這段 Prompt 指示用 decodeText(base64) 包起來，
+// 避免打包後的 JS 檔案裡可以直接搜尋到完整內容。要修改內容時，先把 base64 還原成明文
+// 修改（留意 %%WORDS%% 這個佔位字串要保留在正確位置），改完再重新編碼回去。
+const PROMPT_TEMPLATE_B64 =
+  '5L2g5piv5LiA5YCL5bmr5b+Z5oqK5Zau5a2X6L2J5o+b5oiQIEFua2kg5YWL5ryP5a2X77yIQ2xvemXvvInljaHniYfnmoTliqnmiYvjgILoq4vph53lsI3kuIvpnaLmr4/kuIDlgIvllq7lrZfvvIzlkIToh6rnlJ/miJDkuIDlj6Xoh6rnhLbjgIHmnInkuIrkuIvmlofoqp7looPnmoTkvovlj6XvvIzkuKbkuJTnlKjlhanlgIvmmJ/omZ8gKiog5oqK44CM6YCZ5YCL5Zau5a2X5Zyo5Y+l5a2Q5Lit5a+m6Zqb5Ye654++55qE6YOo5YiG44CN5qGG6LW35L6G77yI5L6L5aaC5Zau5a2X5pivIHJ1bu+8jOWPpeWtkOijoeeUqOS6hiBydW5uaW5n77yM5bCx5qGGICoqcnVubmluZyoq77yJ44CC55SoIEpTT04g6Zmj5YiX5qC85byP5Zue5YKz77yM5LiN6KaB5pyJ5YW25LuW5paH5a2X5oiW6Kqq5piO44CCCgrmr4/lgIvlhYPntKDnmoTmoLzlvI/vvJoKewogICJ3b3JkIjogIuWOn+Wni+WWruWtlyIsCiAgInNlbnRlbmNlIjogIuWMheWQqyAqKiDmqJnoqJjnmoTkvovlj6UiLAogICJub3RlcyI6ICLllq7lrZfnmoToqZ7mgKfjgIHmhI/mgJ3jgIHmiJbnsKHnn63oo5zlhYXoqqrmmI7vvIjpgbjloavvvIzmspLmnInlsLHnlZnnqbrlrZfkuLLvvIkiCn0KCuimj+WJh++8mgotIOS+i+WPpeijoeS4gOWumuimgeacieeUqCAqKiAqKiDmoYbotbfkvobnmoTpg6jliIbvvIzkuJTmoYbotbfkvobnmoTlhaflrrnopoHog73lsI3mh4nliLDpgJnlgIvllq7lrZcKLSDmr4/ooYzovLjlhaXmmK/kuIDlgIvllq7lrZfvvIjkuZ/lj6/og73nlKjpgJfomZ/liIbpmpTlpJrlgIvllq7lrZfvvInvvIzlv73nlaXnqbrnmb3ooYwKCuWWruWtl+WIl+ihqO+8mgoiIiIKJSVXT1JEUyUlCiIiIg=='
 
-每個元素的格式：
-{
-  "word": "原始單字",
-  "sentence": "包含 ** 標記的例句",
-  "notes": "單字的詞性、意思、或簡短補充說明（選填，沒有就留空字串）"
-}
-
-規則：
-- 例句裡一定要有用 ** ** 框起來的部分，且框起來的內容要能對應到這個單字
-- 每行輸入是一個單字（也可能用逗號分隔多個單字），忽略空白行
-
-單字列表：
-"""
-${words}
-"""`
+const PROMPT_TEMPLATE = (words: string) => decodeText(PROMPT_TEMPLATE_B64).split('%%WORDS%%').join(words)
 
 async function callGemini(apiKey: string, model: string, words: string): Promise<ClozeCard[]> {
   const parsed = await callGeminiJson(apiKey, model, PROMPT_TEMPLATE(words))

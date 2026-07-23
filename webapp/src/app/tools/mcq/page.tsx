@@ -8,6 +8,7 @@ import { clearDrawer, getDrawerCards, syncDrawerOwner } from '@/lib/drawer-stora
 import { useCurrentUser } from '@/lib/use-current-user'
 import { getSavedGeminiApiKey, saveGeminiApiKey } from '@/lib/gemini-key-storage'
 import { callGeminiJson } from '@/lib/gemini-client'
+import { decodeText } from '@/lib/text-obfuscation'
 import type { McqCard } from '@/lib/history-types'
 import { addCardsToAnki, ensureAnkiGenModelExists, ensureDeckExists, type AnkiCardInput } from '@/lib/anki-connect'
 import SaveToAnkiButton from '@/components/save-to-anki-button'
@@ -51,25 +52,13 @@ D. 左心室肥大（Left Ventricular Hypertrophy）
 答案：A, B, C
 解析：患者聽診特徵為典型的二尖瓣狹窄（Mitral Stenosis）。二尖瓣狹窄會導致左心房壓力增高並擴大，進而引發心房顫動與肺靜脈高壓/肺動脈高壓。然而，因為血液進入左心室受阻，左心室通常不會肥大。`
 
-const PROMPT_TEMPLATE = (sourceText: string) => `你是一個幫忙把文字內容轉換成 Anki 選擇題卡片的助手。請閱讀以下文字內容，盡量抽取或改寫成多張選擇題，用 JSON 陣列格式回傳，不要有其他文字或說明。
+// 跟 anki-*-templates.ts 同樣的考量：把這段 Prompt 指示用 decodeText(base64) 包起來，
+// 避免打包後的 JS 檔案裡可以直接搜尋到完整內容。要修改內容時，先把 base64 還原成明文
+// 修改（留意 %%SOURCE_TEXT%% 這個佔位字串要保留在正確位置），改完再重新編碼回去。
+const PROMPT_TEMPLATE_B64 =
+  '5L2g5piv5LiA5YCL5bmr5b+Z5oqK5paH5a2X5YWn5a656L2J5o+b5oiQIEFua2kg6YG45pOH6aGM5Y2h54mH55qE5Yqp5omL44CC6KuL6Zax6K6A5Lul5LiL5paH5a2X5YWn5a6577yM55uh6YeP5oq95Y+W5oiW5pS55a+r5oiQ5aSa5by16YG45pOH6aGM77yM55SoIEpTT04g6Zmj5YiX5qC85byP5Zue5YKz77yM5LiN6KaB5pyJ5YW25LuW5paH5a2X5oiW6Kqq5piO44CCCgrmr4/lgIvlhYPntKDnmoTmoLzlvI/vvJoKewogICJxdWVzdGlvblRleHQiOiAi6aGM55uu5YWn5a65IiwKICAib3B0aW9uQSI6ICLpgbjpoIVBIiwgIm9wdGlvbkIiOiAi6YG46aCFQiIsICJvcHRpb25DIjogIumBuOmghUMiLCAib3B0aW9uRCI6ICLpgbjpoIVEIiwgIm9wdGlvbkUiOiAi6YG46aCFRSIsICJvcHRpb25GIjogIumBuOmghUYiLAogICJhbnN3ZXIiOiAi5q2j56K6562U5qGI55qE5a2X5q+N77yM5L6L5aaC44CMQeOAje+8m+WmguaenOaYr+WkmumBuOmhjOWwseeUqOWkmuWAi+Wtl+avje+8jOS+i+WmguOAjEFD44CNIiwKICAiaXNNdWx0aXBsZSI6IHRydWUg5oiWIGZhbHNl77yI5piv5ZCm54K65aSa6YG46aGM77yJLAogICJub3RlcyI6ICLnsKHnn63nmoTop6Pph4vmiJboo5zlhYXoqqrmmI7vvIjpgbjloavvvIzmspLmnInlsLHnlZnnqbrlrZfkuLLvvIkiCn0KCuimj+WJh++8mgotIOiHs+WwkeimgeaciSBvcHRpb25BIOWSjCBvcHRpb25C77yM55So5LiN5Yiw55qE6YG46aCF55WZ56m65a2X5LiyICIiCi0g5aaC5p6c5YWn5a655pys6Lqr5YyF5ZCr5pW45a245YWs5byP77yM57at5oyB5Y6f5pys55qE5a+r5rOV77yI5L6L5aaCICR4XjIkIOaIliBcKHheMlwp77yJ77yM5LiN6KaB6Ieq5bex5pS55a+rCgrmloflrZflhaflrrnvvJoKIiIiCiUlU09VUkNFX1RFWFQlJQoiIiI='
 
-每個元素的格式：
-{
-  "questionText": "題目內容",
-  "optionA": "選項A", "optionB": "選項B", "optionC": "選項C", "optionD": "選項D", "optionE": "選項E", "optionF": "選項F",
-  "answer": "正確答案的字母，例如「A」；如果是多選題就用多個字母，例如「AC」",
-  "isMultiple": true 或 false（是否為多選題）,
-  "notes": "簡短的解釋或補充說明（選填，沒有就留空字串）"
-}
-
-規則：
-- 至少要有 optionA 和 optionB，用不到的選項留空字串 ""
-- 如果內容本身包含數學公式，維持原本的寫法（例如 $x^2$ 或 \\(x^2\\)），不要自己改寫
-
-文字內容：
-"""
-${sourceText}
-"""`
+const PROMPT_TEMPLATE = (sourceText: string) => decodeText(PROMPT_TEMPLATE_B64).split('%%SOURCE_TEXT%%').join(sourceText)
 
 async function callGemini(apiKey: string, model: string, sourceText: string): Promise<McqCard[]> {
   const parsed = await callGeminiJson(apiKey, model, PROMPT_TEMPLATE(sourceText))

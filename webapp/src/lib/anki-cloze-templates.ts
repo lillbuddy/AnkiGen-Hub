@@ -1,3 +1,5 @@
+import { decodeText } from './text-obfuscation'
+
 // 這些字串是要透過 AnkiConnect 的 createModel 自動建立「AnkiGen Hub 克漏字」這個
 // 自訂筆記類型時使用的 Front/Back Template 和共用 CSS，語法是 Anki 自己的模板語言
 // （{{Field}}、{{#Field}}...{{/Field}}、{{FrontSide}}），不是給這個網站自己渲染用的。
@@ -7,6 +9,10 @@
 // （虛線框、底線標色等）。改用自訂筆記類型後，Sentence 欄位直接存放我們自己的
 // **word** 標記原文，由這裡的 Front/Back script 自己解析、渲染成跟模擬器一致的
 // 樣式，也讓 ** 這個標記在 Anki 裡有實際的視覺意義，而不是單純不會生效的文字。
+//
+// 下面三個模板改用 decodeText(base64) 包起來（見 text-obfuscation.ts），單純是不想讓
+// 打包後的 JS 檔案裡可以直接搜尋到完整模板內容。要修改模板時，先把 base64 還原成明文
+// 修改，改完再重新編碼回去——不要直接手動編輯 base64 字串本身。
 export const ANKI_CLOZE_MODEL_NAME = 'AnkiGen Hub 克漏字'
 
 export const ANKI_CLOZE_FIELDS = [
@@ -19,177 +25,14 @@ export const ANKI_CLOZE_FIELDS = [
 // 像選擇題那樣用「標記元素判斷是否已在背面」的技巧——因為 Front 的 script 就算透過
 // {{FrontSide}} 被原封不動再嵌入背面一次、重新執行一遍，也只是把同樣的挖空版例句
 // 重新渲染一次，沒有互動狀態需要保護，重複執行完全無害。
-export const ANKI_CLOZE_FRONT_TEMPLATE = `<div class="card front-card">
-  <div class="badge-container">
-    <span class="badge">克漏字</span>
-  </div>
+export const ANKI_CLOZE_FRONT_TEMPLATE = decodeText(
+  "PGRpdiBjbGFzcz0iY2FyZCBmcm9udC1jYXJkIj4KICA8ZGl2IGNsYXNzPSJiYWRnZS1jb250YWluZXIiPgogICAgPHNwYW4gY2xhc3M9ImJhZGdlIj7lhYvmvI/lrZc8L3NwYW4+CiAgPC9kaXY+CgogIDxkaXYgY2xhc3M9ImNsb3plLW9yaWdpbmFsIiBzdHlsZT0iZGlzcGxheTpub25lIj57e1NlbnRlbmNlfX08L2Rpdj4KICA8ZGl2IGNsYXNzPSJxdWVzdGlvbiBjbG96ZS1zZW50ZW5jZSI+PC9kaXY+CgogIDxkaXYgY2xhc3M9InRpcC10ZXh0Ij7mj5DnpLrvvJrmg7PkuIDmg7PooqvmjJbnqbrnmoTlnLDmlrnmmK/ku4DpurzlrZfvvIzlho3nv7vniYznnIvnrZTmoYg8L2Rpdj4KPC9kaXY+Cgo8c2NyaXB0PgogIChmdW5jdGlvbigpIHsKICAgIHZhciBvcmlnaW5hbCA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoJy5jbG96ZS1vcmlnaW5hbCcpLnRleHRDb250ZW50OwogICAgdmFyIHRhcmdldCA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoJy5jbG96ZS1zZW50ZW5jZScpOwogICAgdmFyIG1hdGNoID0gb3JpZ2luYWwubWF0Y2goL1wqXCooW1xzXFNdKz8pXCpcKi8pOwoKICAgIHRhcmdldC50ZXh0Q29udGVudCA9ICcnOwogICAgaWYgKG1hdGNoKSB7CiAgICAgIHRhcmdldC5hcHBlbmRDaGlsZChkb2N1bWVudC5jcmVhdGVUZXh0Tm9kZShvcmlnaW5hbC5zbGljZSgwLCBtYXRjaC5pbmRleCkpKTsKICAgICAgdmFyIGJsYW5rU3BhbiA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ3NwYW4nKTsKICAgICAgYmxhbmtTcGFuLmNsYXNzTmFtZSA9ICdjbG96ZS1ibGFuayc7CiAgICAgIGJsYW5rU3Bhbi50ZXh0Q29udGVudCA9ICdbLi4uXSc7CiAgICAgIHRhcmdldC5hcHBlbmRDaGlsZChibGFua1NwYW4pOwogICAgICB0YXJnZXQuYXBwZW5kQ2hpbGQoZG9jdW1lbnQuY3JlYXRlVGV4dE5vZGUob3JpZ2luYWwuc2xpY2UobWF0Y2guaW5kZXggKyBtYXRjaFswXS5sZW5ndGgpKSk7CiAgICB9IGVsc2UgewogICAgICB0YXJnZXQudGV4dENvbnRlbnQgPSBvcmlnaW5hbDsKICAgIH0KICB9KSgpOwo8L3NjcmlwdD4="
+)
 
-  <div class="cloze-original" style="display:none">{{Sentence}}</div>
-  <div class="question cloze-sentence"></div>
+export const ANKI_CLOZE_BACK_TEMPLATE = decodeText(
+  "e3tGcm9udFNpZGV9fQoKPGhyIGlkPSJhbnN3ZXItc3BsaXQiPgoKPGRpdiBjbGFzcz0iY2FyZCBiYWNrLWNhcmQiPgogIDxkaXYgY2xhc3M9ImNsb3plLW9yaWdpbmFsIiBzdHlsZT0iZGlzcGxheTpub25lIj57e1NlbnRlbmNlfX08L2Rpdj4KICA8ZGl2IGNsYXNzPSJxdWVzdGlvbiBjbG96ZS1zZW50ZW5jZS1hbnN3ZXIiPjwvZGl2PgoKICA8ZGl2IGNsYXNzPSJhbnN3ZXItYm94Ij4KICAgIOWWruWtl++8mjxzcGFuIGNsYXNzPSJjb3JyZWN0LWFuc3dlciI+e3tXb3JkfX08L3NwYW4+CiAgPC9kaXY+CgogIHt7I0V4cGxhbmF0aW9ufX0KICAgIDxkaXYgY2xhc3M9ImV4cGxhbmF0aW9uLWJveCI+CiAgICAgIDxkaXYgY2xhc3M9ImV4cGxhbmF0aW9uLXRpdGxlIj7lgpnoqLs8L2Rpdj4KICAgICAgPGRpdiBjbGFzcz0iZXhwbGFuYXRpb24tY29udGVudCI+e3tFeHBsYW5hdGlvbn19PC9kaXY+CiAgICA8L2Rpdj4KICB7ey9FeHBsYW5hdGlvbn19CjwvZGl2PgoKPHNjcmlwdD4KICAoZnVuY3Rpb24oKSB7CiAgICB2YXIgb3JpZ2luYWwgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCcuY2xvemUtb3JpZ2luYWwnKS50ZXh0Q29udGVudDsKICAgIHZhciB0YXJnZXQgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCcuY2xvemUtc2VudGVuY2UtYW5zd2VyJyk7CiAgICB2YXIgbWF0Y2ggPSBvcmlnaW5hbC5tYXRjaCgvXCpcKihbXHNcU10rPylcKlwqLyk7CgogICAgdGFyZ2V0LnRleHRDb250ZW50ID0gJyc7CiAgICBpZiAobWF0Y2gpIHsKICAgICAgdGFyZ2V0LmFwcGVuZENoaWxkKGRvY3VtZW50LmNyZWF0ZVRleHROb2RlKG9yaWdpbmFsLnNsaWNlKDAsIG1hdGNoLmluZGV4KSkpOwogICAgICB2YXIgYW5zd2VyU3BhbiA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ3NwYW4nKTsKICAgICAgYW5zd2VyU3Bhbi5jbGFzc05hbWUgPSAnY2xvemUtYW5zd2VyJzsKICAgICAgYW5zd2VyU3Bhbi50ZXh0Q29udGVudCA9IG1hdGNoWzFdOwogICAgICB0YXJnZXQuYXBwZW5kQ2hpbGQoYW5zd2VyU3Bhbik7CiAgICAgIHRhcmdldC5hcHBlbmRDaGlsZChkb2N1bWVudC5jcmVhdGVUZXh0Tm9kZShvcmlnaW5hbC5zbGljZShtYXRjaC5pbmRleCArIG1hdGNoWzBdLmxlbmd0aCkpKTsKICAgIH0gZWxzZSB7CiAgICAgIHRhcmdldC50ZXh0Q29udGVudCA9IG9yaWdpbmFsOwogICAgfQogIH0pKCk7Cjwvc2NyaXB0Pg=="
+)
 
-  <div class="tip-text">提示：想一想被挖空的地方是什麼字，再翻牌看答案</div>
-</div>
-
-<script>
-  (function() {
-    var original = document.querySelector('.cloze-original').textContent;
-    var target = document.querySelector('.cloze-sentence');
-    var match = original.match(/\\*\\*([\\s\\S]+?)\\*\\*/);
-
-    target.textContent = '';
-    if (match) {
-      target.appendChild(document.createTextNode(original.slice(0, match.index)));
-      var blankSpan = document.createElement('span');
-      blankSpan.className = 'cloze-blank';
-      blankSpan.textContent = '[...]';
-      target.appendChild(blankSpan);
-      target.appendChild(document.createTextNode(original.slice(match.index + match[0].length)));
-    } else {
-      target.textContent = original;
-    }
-  })();
-</script>`
-
-export const ANKI_CLOZE_BACK_TEMPLATE = `{{FrontSide}}
-
-<hr id="answer-split">
-
-<div class="card back-card">
-  <div class="cloze-original" style="display:none">{{Sentence}}</div>
-  <div class="question cloze-sentence-answer"></div>
-
-  <div class="answer-box">
-    單字：<span class="correct-answer">{{Word}}</span>
-  </div>
-
-  {{#Explanation}}
-    <div class="explanation-box">
-      <div class="explanation-title">備註</div>
-      <div class="explanation-content">{{Explanation}}</div>
-    </div>
-  {{/Explanation}}
-</div>
-
-<script>
-  (function() {
-    var original = document.querySelector('.cloze-original').textContent;
-    var target = document.querySelector('.cloze-sentence-answer');
-    var match = original.match(/\\*\\*([\\s\\S]+?)\\*\\*/);
-
-    target.textContent = '';
-    if (match) {
-      target.appendChild(document.createTextNode(original.slice(0, match.index)));
-      var answerSpan = document.createElement('span');
-      answerSpan.className = 'cloze-answer';
-      answerSpan.textContent = match[1];
-      target.appendChild(answerSpan);
-      target.appendChild(document.createTextNode(original.slice(match.index + match[0].length)));
-    } else {
-      target.textContent = original;
-    }
-  })();
-</script>`
-
-export const ANKI_CLOZE_CSS_TEMPLATE = `.card {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  font-size: 16px;
-  text-align: left;
-  color: #333333;
-  background-color: #ffffff;
-  padding: 22px;
-  max-width: 480px;
-  margin: 0 auto;
-}
-
-#answer-split {
-  border: 0;
-  height: 1px;
-  background-color: #e0e0e0;
-  margin: 20px auto;
-  max-width: 480px;
-}
-
-.badge-container {
-  display: flex;
-  justify-content: flex-start;
-  margin-bottom: 12px;
-}
-
-.badge {
-  font-size: 11px;
-  font-weight: bold;
-  padding: 3px 10px;
-  border-radius: 20px;
-  background-color: #e8f0fe;
-  border: 1px solid #c5d7f5;
-  color: #4285f4;
-}
-
-.question {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  line-height: 1.6;
-  color: #222222;
-}
-
-.cloze-blank {
-  display: inline-block;
-  padding: 0 6px;
-  border-radius: 4px;
-  background-color: #f1f5f9;
-  border: 1px dashed #cbd5e1;
-  color: #94a3b8;
-  font-weight: 700;
-}
-
-.cloze-answer {
-  font-weight: 700;
-  color: #14284A;
-  text-decoration: underline;
-  text-decoration-color: #3B6FC4;
-  text-underline-offset: 3px;
-}
-
-.tip-text {
-  text-align: center;
-  font-size: 11px;
-  color: #999999;
-  margin-top: 12px;
-}
-
-.answer-box {
-  background-color: #f8f9fa;
-  border: 1px dashed #e0e0e0;
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 14px;
-  margin-top: 15px;
-  margin-bottom: 12px;
-}
-
-.correct-answer {
-  font-weight: bold;
-  color: #14284A;
-}
-
-.explanation-box {
-  background-color: #f8f9fa;
-  border-left: 3px solid #cccccc;
-  border-radius: 0 6px 6px 0;
-  padding: 12px;
-  margin-top: 15px;
-}
-
-.explanation-title {
-  font-size: 12px;
-  font-weight: bold;
-  color: #666666;
-  margin-bottom: 4px;
-}
-
-.explanation-content {
-  font-size: 13px;
-  color: #555555;
-  line-height: 1.5;
-}`
+export const ANKI_CLOZE_CSS_TEMPLATE = decodeText(
+  "LmNhcmQgewogIGZvbnQtZmFtaWx5OiAtYXBwbGUtc3lzdGVtLCBCbGlua01hY1N5c3RlbUZvbnQsICJTZWdvZSBVSSIsIFJvYm90bywgQXJpYWwsIHNhbnMtc2VyaWY7CiAgZm9udC1zaXplOiAxNnB4OwogIHRleHQtYWxpZ246IGxlZnQ7CiAgY29sb3I6ICMzMzMzMzM7CiAgYmFja2dyb3VuZC1jb2xvcjogI2ZmZmZmZjsKICBwYWRkaW5nOiAyMnB4OwogIG1heC13aWR0aDogNDgwcHg7CiAgbWFyZ2luOiAwIGF1dG87Cn0KCiNhbnN3ZXItc3BsaXQgewogIGJvcmRlcjogMDsKICBoZWlnaHQ6IDFweDsKICBiYWNrZ3JvdW5kLWNvbG9yOiAjZTBlMGUwOwogIG1hcmdpbjogMjBweCBhdXRvOwogIG1heC13aWR0aDogNDgwcHg7Cn0KCi5iYWRnZS1jb250YWluZXIgewogIGRpc3BsYXk6IGZsZXg7CiAganVzdGlmeS1jb250ZW50OiBmbGV4LXN0YXJ0OwogIG1hcmdpbi1ib3R0b206IDEycHg7Cn0KCi5iYWRnZSB7CiAgZm9udC1zaXplOiAxMXB4OwogIGZvbnQtd2VpZ2h0OiBib2xkOwogIHBhZGRpbmc6IDNweCAxMHB4OwogIGJvcmRlci1yYWRpdXM6IDIwcHg7CiAgYmFja2dyb3VuZC1jb2xvcjogI2U4ZjBmZTsKICBib3JkZXI6IDFweCBzb2xpZCAjYzVkN2Y1OwogIGNvbG9yOiAjNDI4NWY0Owp9CgoucXVlc3Rpb24gewogIGZvbnQtc2l6ZTogMThweDsKICBmb250LXdlaWdodDogYm9sZDsKICBtYXJnaW4tYm90dG9tOiAyMHB4OwogIGxpbmUtaGVpZ2h0OiAxLjY7CiAgY29sb3I6ICMyMjIyMjI7Cn0KCi5jbG96ZS1ibGFuayB7CiAgZGlzcGxheTogaW5saW5lLWJsb2NrOwogIHBhZGRpbmc6IDAgNnB4OwogIGJvcmRlci1yYWRpdXM6IDRweDsKICBiYWNrZ3JvdW5kLWNvbG9yOiAjZjFmNWY5OwogIGJvcmRlcjogMXB4IGRhc2hlZCAjY2JkNWUxOwogIGNvbG9yOiAjOTRhM2I4OwogIGZvbnQtd2VpZ2h0OiA3MDA7Cn0KCi5jbG96ZS1hbnN3ZXIgewogIGZvbnQtd2VpZ2h0OiA3MDA7CiAgY29sb3I6ICMxNDI4NEE7CiAgdGV4dC1kZWNvcmF0aW9uOiB1bmRlcmxpbmU7CiAgdGV4dC1kZWNvcmF0aW9uLWNvbG9yOiAjM0I2RkM0OwogIHRleHQtdW5kZXJsaW5lLW9mZnNldDogM3B4Owp9CgoudGlwLXRleHQgewogIHRleHQtYWxpZ246IGNlbnRlcjsKICBmb250LXNpemU6IDExcHg7CiAgY29sb3I6ICM5OTk5OTk7CiAgbWFyZ2luLXRvcDogMTJweDsKfQoKLmFuc3dlci1ib3ggewogIGJhY2tncm91bmQtY29sb3I6ICNmOGY5ZmE7CiAgYm9yZGVyOiAxcHggZGFzaGVkICNlMGUwZTA7CiAgYm9yZGVyLXJhZGl1czogOHB4OwogIHBhZGRpbmc6IDEwcHggMTRweDsKICBmb250LXNpemU6IDE0cHg7CiAgbWFyZ2luLXRvcDogMTVweDsKICBtYXJnaW4tYm90dG9tOiAxMnB4Owp9CgouY29ycmVjdC1hbnN3ZXIgewogIGZvbnQtd2VpZ2h0OiBib2xkOwogIGNvbG9yOiAjMTQyODRBOwp9CgouZXhwbGFuYXRpb24tYm94IHsKICBiYWNrZ3JvdW5kLWNvbG9yOiAjZjhmOWZhOwogIGJvcmRlci1sZWZ0OiAzcHggc29saWQgI2NjY2NjYzsKICBib3JkZXItcmFkaXVzOiAwIDZweCA2cHggMDsKICBwYWRkaW5nOiAxMnB4OwogIG1hcmdpbi10b3A6IDE1cHg7Cn0KCi5leHBsYW5hdGlvbi10aXRsZSB7CiAgZm9udC1zaXplOiAxMnB4OwogIGZvbnQtd2VpZ2h0OiBib2xkOwogIGNvbG9yOiAjNjY2NjY2OwogIG1hcmdpbi1ib3R0b206IDRweDsKfQoKLmV4cGxhbmF0aW9uLWNvbnRlbnQgewogIGZvbnQtc2l6ZTogMTNweDsKICBjb2xvcjogIzU1NTU1NTsKICBsaW5lLWhlaWdodDogMS41Owp9"
+)
