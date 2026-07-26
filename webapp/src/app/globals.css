@@ -305,6 +305,60 @@ body {
     gap: 6px;
   }
 
+  /* 可收合的提示（例如免費 API Key 的 lite 模型使用建議），預設收起來以免佔版面 */
+  .hint-collapsible summary {
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    list-style: none;
+  }
+
+  .hint-collapsible summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .hint-collapsible summary::before {
+    content: '▸';
+    display: inline-block;
+    width: 12px;
+    transition: transform 0.15s ease;
+  }
+
+  .hint-collapsible[open] summary::before {
+    transform: rotate(90deg);
+  }
+
+  /* 輸入方式切換：貼上文字 / 上傳 PDF、照片 二選一 */
+  .input-method-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+
+  .input-method-tab {
+    flex: 1;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--color-panel-border);
+    background-color: var(--color-panel);
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .input-method-tab:hover {
+    background-color: var(--color-subtle);
+  }
+
+  .input-method-tab.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #ffffff;
+  }
+
   /* PDF / 照片上傳區，沿用舊版靜態網站 style.css 的設計 */
   .file-upload-wrapper {
     display: flex;

@@ -122,7 +122,8 @@ function makeCardState(card: Partial<McqCard> = {}): CardState {
 export default function McqToolPage() {
   const { user, ready: userReady } = useCurrentUser()
   const [apiKey, setApiKey] = useState('')
-  const [model, setModel] = useState('gemini-3.5-flash')
+  const [model, setModel] = useState('gemini-3.6-flash')
+  const [inputMethod, setInputMethod] = useState<'text' | 'file'>('text')
   const [sourceText, setSourceText] = useState('')
   const [cards, setCards] = useState<CardState[]>([])
   const [purpose, setPurpose] = useState('')
@@ -187,16 +188,23 @@ export default function McqToolPage() {
       setMessage({ type: 'error', text: '請先輸入 Gemini API Key' })
       return
     }
-    if (!sourceText.trim() && uploadedFiles.length === 0) {
-      setMessage({ type: 'error', text: '請先貼上要解析的文字內容，或上傳 PDF / 照片檔案' })
+    if (inputMethod === 'text' && !sourceText.trim()) {
+      setMessage({ type: 'error', text: '請先貼上要解析的文字內容' })
+      return
+    }
+    if (inputMethod === 'file' && uploadedFiles.length === 0) {
+      setMessage({ type: 'error', text: '請先上傳 PDF 或照片檔案' })
       return
     }
 
     setParsing(true)
     setMessage(null)
     try {
-      const files: GeminiInlineFile[] = uploadedFiles.map((f) => ({ mimeType: f.mimeType, base64: f.base64 }))
-      const parsed = await callGemini(apiKey.trim(), model, sourceText, files)
+      // 使用者是透過「輸入方式」分頁二選一，所以只送出目前選擇的那一種來源給 Gemini。
+      const effectiveSourceText = inputMethod === 'text' ? sourceText : ''
+      const files: GeminiInlineFile[] =
+        inputMethod === 'file' ? uploadedFiles.map((f) => ({ mimeType: f.mimeType, base64: f.base64 })) : []
+      const parsed = await callGemini(apiKey.trim(), model, effectiveSourceText, files)
       setCards((prev) => [...prev, ...parsed.map((c) => makeCardState(c))])
       setMessage({ type: 'ok', text: `解析出 ${parsed.length} 張卡片` })
     } catch (error) {
@@ -206,16 +214,28 @@ export default function McqToolPage() {
     }
   }
 
-  // 驗證並讀取使用者選取／拖放的 PDF、照片檔案，轉成 base64 存進 state
+  // 驗證並讀取使用者選取／拖放的 PDF、照片檔案，轉成 base64 存進 state。
+  // 同一批只能是 PDF 或照片其中一種：已有上傳檔案時，用第一個檔案的類型鎖住這批次，
+  // 之後選到不同類型的檔案就擋掉，避免 AI 把不同來源的頁面混在一起判讀。
   async function handleFilesSelected(fileList: FileList | null) {
     const files = Array.from(fileList ?? [])
     if (files.length === 0) return
+
+    let lockedCategory: 'pdf' | 'image' | null =
+      uploadedFiles.length > 0 ? (uploadedFiles[0].mimeType === 'application/pdf' ? 'pdf' : 'image') : null
 
     for (const file of files) {
       const isPdf = file.type === 'application/pdf'
       const isImage = file.type.startsWith('image/')
       if (!isPdf && !isImage) {
         alert(`「${file.name}」不是支援的格式，請上傳 PDF 或圖片檔案。`)
+        continue
+      }
+      const category: 'pdf' | 'image' = isPdf ? 'pdf' : 'image'
+      if (lockedCategory && category !== lockedCategory) {
+        alert(
+          `「${file.name}」無法加入：PDF 和照片不能同時上傳，請先移除已上傳的${lockedCategory === 'pdf' ? 'PDF' : '照片'}，或只選同一種類型的檔案。`
+        )
         continue
       }
       if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
@@ -225,6 +245,7 @@ export default function McqToolPage() {
       try {
         const base64 = await readFileAsBase64(file)
         setUploadedFiles((prev) => [...prev, { localId: crypto.randomUUID(), name: file.name, mimeType: file.type, base64 }])
+        lockedCategory = category
       } catch (error) {
         alert(error instanceof Error ? error.message : `讀取「${file.name}」時發生錯誤`)
       }
@@ -246,6 +267,7 @@ export default function McqToolPage() {
   }
 
   function handleLoadSample() {
+    setInputMethod('text')
     setSourceText(SAMPLE_MARKDOWN)
   }
 
@@ -320,6 +342,9 @@ export default function McqToolPage() {
   const previewCard = cards[Math.min(previewIndex, cards.length - 1)] ?? SAMPLE_PREVIEW_CARD
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const ankiCards: AnkiCardInput[] = cards.map(({ localId, ...card }) => card)
+  // 用來鎖住 accept 屬性與提示文字：已經上傳過 PDF 就只能再選 PDF，反之亦然。
+  const uploadedCategory: 'pdf' | 'image' | null =
+    uploadedFiles.length > 0 ? (uploadedFiles[0].mimeType === 'application/pdf' ? 'pdf' : 'image') : null
 
   return (
     <main className="app-container">
@@ -339,7 +364,9 @@ export default function McqToolPage() {
           </div>
           <div className="panel-body">
             <p className="instruction-text">
-              貼上你的文字內容（例如考卷、筆記），或直接上傳 PDF / 拍照圖片，AI 會自動解析題號、題目、選項、正確答案與解析。
+              {inputMethod === 'file'
+                ? '上傳你的 PDF 或拍照圖片，AI 會直接讀取檔案內容，自動解析題號、題目、選項、正確答案與解析。'
+                : '貼上你的文字內容（例如考卷、筆記），系統會用 AI 自動解析題號、題目、選項、正確答案與解析。'}
             </p>
 
             <div className="api-key-wrapper">
@@ -361,7 +388,8 @@ export default function McqToolPage() {
                 onChange={(e) => setModel(e.target.value)}
                 className="model-select"
               >
-                <option value="gemini-3.5-flash">gemini-3.5-flash（推薦）</option>
+                <option value="gemini-3.6-flash">gemini-3.6-flash（推薦）</option>
+                <option value="gemini-3.5-flash">gemini-3.5-flash</option>
                 <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite（極速）</option>
                 <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview（深度解析）</option>
               </select>
@@ -374,72 +402,104 @@ export default function McqToolPage() {
                 ❓ 獲取 Key
               </a>
             </div>
-            <p className="instruction-text mb-4">
-              💡 如果你的 API Key 是免費申請的，建議選用 <strong>gemini-3.1-flash-lite</strong>
-              （額度限制較寬鬆）；但 lite 版本能處理的資料量較小，單次貼上的內容不要太多，以免生成失敗或跑不出結果，建議分批處理。
-            </p>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf,image/*"
-              multiple
-              hidden
-              onChange={(e) => {
-                void handleFilesSelected(e.target.files)
-                e.target.value = '' // 清空，允許重複選取同一檔案
-              }}
-            />
-            <div
-              className={`file-upload-wrapper${isDragOver ? ' dragover' : ''}`}
-              onDragOver={(e) => {
-                e.preventDefault()
-                setIsDragOver(true)
-              }}
-              onDragEnter={(e) => {
-                e.preventDefault()
-                setIsDragOver(true)
-              }}
-              onDragLeave={() => setIsDragOver(false)}
-              onDragEnd={() => setIsDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault()
-                setIsDragOver(false)
-                void handleFilesSelected(e.dataTransfer.files)
-              }}
-            >
+            <details className="hint-collapsible mb-4">
+              <summary>免費 API Key 的使用建議</summary>
+              <p className="instruction-text mt-2 mb-0">
+                如果你的 API Key 是免費申請的，建議選用 <strong>gemini-3.1-flash-lite</strong>
+                （額度限制較寬鬆）；但 lite 版本能處理的資料量較小，單次貼上的內容不要太多，以免生成失敗或跑不出結果，建議分批處理。
+              </p>
+            </details>
+
+            <div className="input-method-tabs">
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="btn btn-secondary btn-sm"
+                onClick={() => setInputMethod('text')}
+                className={`input-method-tab${inputMethod === 'text' ? ' active' : ''}`}
+              >
+                📝 貼上文字
+              </button>
+              <button
+                type="button"
+                onClick={() => setInputMethod('file')}
+                className={`input-method-tab${inputMethod === 'file' ? ' active' : ''}`}
               >
                 📎 上傳 PDF / 照片
               </button>
-              <span className="file-upload-hint">可多選或拖放；AI 會直接讀取檔案內容，不需先轉成文字</span>
-              {uploadedFiles.length > 0 && (
-                <div className="file-upload-list">
-                  {uploadedFiles.map((f) => (
-                    <div key={f.localId} className="file-chip">
-                      <span>{f.mimeType === 'application/pdf' ? '📄' : '🖼️'}</span>
-                      <span className="file-chip-name" title={f.name}>
-                        {f.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeUploadedFile(f.localId)}
-                        className="file-chip-remove"
-                        title="移除此檔案"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            <textarea
-              placeholder="貼上文字內容，或直接上傳上方的 PDF / 照片檔案，例如：
+            {inputMethod === 'file' ? (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={
+                    uploadedCategory === 'pdf'
+                      ? 'application/pdf'
+                      : uploadedCategory === 'image'
+                        ? 'image/*'
+                        : 'application/pdf,image/*'
+                  }
+                  multiple
+                  hidden
+                  onChange={(e) => {
+                    void handleFilesSelected(e.target.files)
+                    e.target.value = '' // 清空，允許重複選取同一檔案
+                  }}
+                />
+                <div
+                  className={`file-upload-wrapper${isDragOver ? ' dragover' : ''}`}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    setIsDragOver(true)
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault()
+                    setIsDragOver(true)
+                  }}
+                  onDragLeave={() => setIsDragOver(false)}
+                  onDragEnd={() => setIsDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    setIsDragOver(false)
+                    void handleFilesSelected(e.dataTransfer.files)
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    📎 選擇檔案
+                  </button>
+                  <span className="file-upload-hint">
+                    可多選或拖放；同一次只能上傳 PDF 或照片其中一種，AI 會直接讀取檔案內容，不需先轉成文字
+                  </span>
+                  {uploadedFiles.length > 0 && (
+                    <div className="file-upload-list">
+                      {uploadedFiles.map((f) => (
+                        <div key={f.localId} className="file-chip">
+                          <span>{f.mimeType === 'application/pdf' ? '📄' : '🖼️'}</span>
+                          <span className="file-chip-name" title={f.name}>
+                            {f.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeUploadedFile(f.localId)}
+                            className="file-chip-remove"
+                            title="移除此檔案"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <textarea
+                placeholder="貼上文字內容，例如：
 1. 關於二尖瓣狹窄的敘述，下列何者錯誤？
 A. 最常見的原因是風濕熱
 B. 心尖處可聽到舒張期心雜音
@@ -447,11 +507,12 @@ C. 常合併心房顫動
 D. 第一心音會變弱
 答案：D
 解析：二尖瓣狹窄時，第一心音通常會變強（Loud S1）..."
-              value={sourceText}
-              onChange={(e) => setSourceText(e.target.value)}
-              rows={10}
-              className="field-input mb-4 font-mono"
-            />
+                value={sourceText}
+                onChange={(e) => setSourceText(e.target.value)}
+                rows={10}
+                className="field-input mb-4 font-mono"
+              />
+            )}
 
             <button onClick={handleParse} disabled={parsing} className="btn btn-primary w-full">
               {parsing ? '✨ 解析中...' : '✨ AI 智慧解析'}
