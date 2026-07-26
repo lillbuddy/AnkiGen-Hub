@@ -52,25 +52,7 @@
   font-size: 13px;
 }
 
-/* 提示卡片 */
-.notice-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  background-color: var(--color-accent-light);
-  border: 1px solid rgba(14, 165, 233, 0.25);
-  border-radius: var(--border-radius-sm);
-  padding: 12px 14px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-.notice-box i {
-  color: var(--color-accent);
-  margin-top: 2px;
-}
-
+/* 提示卡片（基礎樣式在 style.css 共用，這裡只補 slides.html 特有的 code 樣式） */
 .notice-box code {
   background-color: rgba(14, 165, 233, 0.12);
   color: #0c4a6e;

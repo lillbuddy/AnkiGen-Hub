@@ -86,7 +86,12 @@ export default function LoginPage() {
             {loading ? '登入中...' : '登入'}
           </button>
         </form>
-        <p className="mt-4 text-center text-sm text-text-secondary">
+        <p className="mt-3 text-center text-sm">
+          <Link href="/forgot-password" className="text-primary underline">
+            忘記密碼？
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-sm text-text-secondary">
           還沒有帳號？{' '}
           <Link href="/signup" className="text-primary underline">
             前往註冊

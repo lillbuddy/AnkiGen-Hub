@@ -43,6 +43,7 @@
       </a>
       <div class="app-desc">
         <span class="app-slogan">The central hub for instant Anki creation</span>
+        <a href="history.html" class="nav-home-link"><i class="fa-solid fa-clock-rotate-left"></i> 歷史紀錄</a>
         <a href="index.html" class="nav-home-link"><i class="fa-solid fa-house"></i> 回首頁</a>
       </div>
     </div>
@@ -62,7 +63,7 @@
           </div>
         </div>
         <div class="panel-body">
-          <p class="instruction-text">貼上你的 Markdown 考卷文字。系統會自動解析題號、題目、選項、正確答案與解析。</p>
+          <p class="instruction-text">貼上你的 Markdown 考卷文字，或直接上傳 PDF / 拍照圖片，AI 會自動解析題號、題目、選項、正確答案與解析。</p>
 
           <!-- Gemini API Key 與模型選擇區 -->
           <div class="api-key-wrapper">
@@ -86,7 +87,17 @@
               title="前往 Google AI Studio 免費申請 API Key"><i class="fa-solid fa-circle-question"></i> 獲取 Key</a>
           </div>
 
-          <textarea id="markdown-input" placeholder="貼上 Markdown 格式考卷，例如：
+          <!-- PDF / 照片上傳區 -->
+          <div class="file-upload-wrapper" id="file-upload-wrapper">
+            <input type="file" id="file-upload-input" accept="application/pdf,image/*" multiple hidden>
+            <button type="button" id="btn-choose-files" class="btn btn-secondary btn-sm">
+              <i class="fa-solid fa-file-arrow-up"></i> 上傳 PDF / 照片
+            </button>
+            <span class="file-upload-hint">可多選；AI 會直接讀取檔案內容，不需先轉成文字</span>
+            <div class="file-upload-list" id="file-upload-list"></div>
+          </div>
+
+          <textarea id="markdown-input" placeholder="貼上 Markdown 格式考卷，或直接上傳上方的 PDF / 照片檔案，例如：
 1. 關於二尖瓣狹窄的敘述，下列何者錯誤？
 A. 最常見的原因是風濕熱
 B. 心尖處可聽到舒張期心雜音
@@ -107,6 +118,7 @@ D. 第一心音會變弱
         <div class="panel-header">
           <h2><i class="fa-solid fa-list-check"></i> 2. 預覽與修改解析結果 (<span id="parsed-count">0</span> 題)</h2>
           <div class="header-actions">
+            <button id="btn-save-history" class="btn btn-secondary"><i class="fa-solid fa-bookmark"></i> 存入紀錄</button>
             <button id="btn-download-csv" class="btn btn-success"><i class="fa-solid fa-file-csv"></i> 匯出 Anki 匯入檔
               (CSV)</button>
           </div>
@@ -262,6 +274,10 @@ D. 第一心音會變弱
   </footer>
 
   <!-- 引入核心 JavaScript -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-ui.js"></script>
+  <script src="history-store.js"></script>
   <script src="app.js"></script>
 </body>
 

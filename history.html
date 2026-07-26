@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnkiGen - 歷史紀錄</title>
+  <!-- 引入 Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- 引入 FontAwesome 圖標 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="history.css">
+</head>
+
+<body class="medical-theme">
+  <!-- 背景發光特效 -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <header class="app-header">
+    <div class="header-container">
+      <a class="logo" href="index.html">
+        <i class="fa-solid fa-lightbulb"></i>
+        <span>AnkiGen <span class="logo-accent">Hub</span></span>
+      </a>
+      <div class="app-desc">
+        <span class="app-slogan">The central hub for instant Anki creation</span>
+        <a href="index.html" class="nav-home-link"><i class="fa-solid fa-house"></i> 回首頁</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wizard-single-col" style="max-width: 1000px; margin-top: 30px;">
+    <div class="card-panel">
+      <div class="panel-header">
+        <h2><i class="fa-solid fa-clock-rotate-left"></i> 歷史紀錄 (<span id="history-count">0</span>)</h2>
+        <div class="header-actions">
+          <button id="btn-clear-all-history" class="btn btn-danger-outline btn-sm"><i class="fa-solid fa-trash-can"></i>
+            全部清除</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="notice-box">
+          <i class="fa-solid fa-circle-info"></i>
+          <div>
+            這份紀錄存在你自己的 Supabase 帳號裡（雲端），登入後不管換裝置、換瀏覽器都看得到一樣的紀錄。在「選擇題卡片生成器」或「圖片標記工具」按下「存入紀錄」，就會出現在這裡。圖片標記工具的紀錄會同時保留完整解析度的原始圖片和縮小過的預覽圖，需要重新匯入 Anki 時可以直接下載原始圖片。
+          </div>
+        </div>
+
+        <div id="history-login-required" class="notice-box" style="display:none;">
+          <i class="fa-solid fa-lock"></i>
+          <div>請先登入才能查看歷史紀錄，點右上角的「登入」。</div>
+        </div>
+
+        <div id="history-empty-state" class="history-empty-state" style="display:none;">
+          <i class="fa-solid fa-inbox"></i>
+          <p>目前還沒有任何歷史紀錄。</p>
+        </div>
+
+        <div id="history-list" class="history-list"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>AnkiGen Hub &copy; 2026. 幫助你更有效率地製作 Anki 卡片。</p>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-ui.js"></script>
+  <script src="history-store.js"></script>
+  <script src="history.js"></script>
+</body>
+
+</html>

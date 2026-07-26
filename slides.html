@@ -30,6 +30,7 @@
       </a>
       <div class="app-desc">
         <span class="app-slogan">The central hub for instant Anki creation</span>
+        <a href="history.html" class="nav-home-link"><i class="fa-solid fa-clock-rotate-left"></i> 歷史紀錄</a>
         <a href="index.html" class="nav-home-link"><i class="fa-solid fa-house"></i> 回首頁</a>
       </div>
     </div>
@@ -226,8 +227,12 @@
 
                 <div class="mt-3 flex-between">
                   <span class="instruction-text" id="mcq-empty-hint">先選取圖片並勾選納入匯出，這裡就會自動整理成選擇題。</span>
-                  <button id="btn-download-mcq-csv" class="btn btn-success"><i class="fa-solid fa-file-csv"></i> 匯出 Anki
-                    匯入檔 (CSV)</button>
+                  <div class="row-actions">
+                    <button id="btn-save-mcq-history" class="btn btn-secondary"><i class="fa-solid fa-bookmark"></i>
+                      存入紀錄</button>
+                    <button id="btn-download-mcq-csv" class="btn btn-success"><i class="fa-solid fa-file-csv"></i> 匯出 Anki
+                      匯入檔 (CSV)</button>
+                  </div>
                 </div>
               </div>
 
@@ -258,8 +263,12 @@
                 </div>
                 <div class="mt-3 flex-between">
                   <span class="instruction-text" id="occlusion-empty-hint">先選取圖片並勾選納入匯出，這裡就會自動整理。</span>
-                  <button id="btn-download-occlusion-csv" class="btn btn-success"><i class="fa-solid fa-file-csv"></i>
-                    匯出 Image Occlusion 匯入檔 (CSV)</button>
+                  <div class="row-actions">
+                    <button id="btn-save-occlusion-history" class="btn btn-secondary"><i class="fa-solid fa-bookmark"></i>
+                      存入紀錄</button>
+                    <button id="btn-download-occlusion-csv" class="btn btn-success"><i class="fa-solid fa-file-csv"></i>
+                      匯出 Image Occlusion 匯入檔 (CSV)</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -443,6 +452,10 @@
   </footer>
 
   <!-- 引入核心 JavaScript -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-ui.js"></script>
+  <script src="history-store.js"></script>
   <script src="slides.js"></script>
 </body>
 

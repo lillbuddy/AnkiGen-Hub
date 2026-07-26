@@ -35,6 +35,7 @@ const tplPanelOcclusion = document.getElementById('tpl-panel-occlusion');
 const slideSharedPrompt = document.getElementById('slide-shared-prompt');
 const btnApplyPrompt = document.getElementById('btn-apply-prompt');
 const btnDownloadMcqCsv = document.getElementById('btn-download-mcq-csv');
+const btnSaveMcqHistory = document.getElementById('btn-save-mcq-history');
 const mcqEmptyHint = document.getElementById('mcq-empty-hint');
 const slideMcqTableBody = document.getElementById('slide-mcq-table-body');
 
@@ -64,6 +65,7 @@ let distractorGlossary = [];
 
 const slideOcclusionTableBody = document.getElementById('slide-occlusion-table-body');
 const btnDownloadOcclusionCsv = document.getElementById('btn-download-occlusion-csv');
+const btnSaveOcclusionHistory = document.getElementById('btn-save-occlusion-history');
 
 // 模擬器 DOM 元素
 const ssSimulatorCard = document.getElementById('ss-simulator-card');
@@ -131,6 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
   btnApplyPrompt.addEventListener('click', applyPromptToAll);
   btnDownloadMcqCsv.addEventListener('click', downloadMcqCsv);
   btnDownloadOcclusionCsv.addEventListener('click', downloadOcclusionCsv);
+  btnSaveMcqHistory.addEventListener('click', saveMcqExportToHistory);
+  btnSaveOcclusionHistory.addEventListener('click', saveOcclusionExportToHistory);
   btnGenerateDistractors.addEventListener('click', generateDistractorsForActiveCard);
   btnUploadGlossary.addEventListener('click', () => glossaryFileInput.click());
   glossaryFileInput.addEventListener('change', handleGlossaryFileSelected);
@@ -1269,13 +1273,8 @@ function getFormattedDate() {
 
 // 選擇題模式：欄位順序與「選擇題卡片生成器」的 Anki 筆記類型完全相同
 // (Question, OptionA-F, Answer, IsMultiple, Explanation)，可以匯入同一個 Anki 筆記類型
-function downloadMcqCsv() {
-  const rows = slideImages.filter(img => img.included);
-  if (rows.length === 0) {
-    alert('請先選取並勾選至少一張圖片！');
-    return;
-  }
-
+// 抽成獨立函式是因為「下載 CSV」按鈕跟「存入歷史紀錄」都需要用到同一份內容。
+function buildSlidesMcqCsvContent(rows) {
   let csvContent = '';
   rows.forEach(img => {
     const cols = [
@@ -1292,8 +1291,17 @@ function downloadMcqCsv() {
     ];
     csvContent += cols.map(escapeCsvField).join(',') + '\n';
   });
+  return csvContent;
+}
 
-  downloadTextAsFile(csvContent, `ankimed_slides_mcq_${getFormattedDate()}.csv`);
+function downloadMcqCsv() {
+  const rows = slideImages.filter(img => img.included);
+  if (rows.length === 0) {
+    alert('請先選取並勾選至少一張圖片！');
+    return;
+  }
+
+  downloadTextAsFile(buildSlidesMcqCsvContent(rows), `ankigen_slides_mcq_${getFormattedDate()}.csv`);
 }
 
 // Image Occlusion 模式：直接對應 Anki 內建 Image Occlusion 筆記類型的 5 個欄位
@@ -1305,13 +1313,8 @@ function downloadMcqCsv() {
 // 避免 Anki 誤判成彼此重複而只留下第一筆）。這個欄位在正面/背面模板裡是 display:none，不會顯示在卡片上，
 // 匯入後這張筆記還沒有遮蓋範圍、也還不會產生卡片，需要你在 Anki 打開這張筆記、用 Image Occlusion
 // 的遮罩編輯器畫出真正的遮蓋範圍，Anki 才會把這個佔位文字換成實際的遮蓋資料並產生卡片。
-function downloadOcclusionCsv() {
-  const rows = slideImages.filter(img => img.included);
-  if (rows.length === 0) {
-    alert('請先選取並勾選至少一張圖片！');
-    return;
-  }
-
+// 抽成獨立函式是因為「下載 CSV」按鈕跟「存入歷史紀錄」都需要用到同一份內容。
+function buildSlidesOcclusionCsvContent(rows) {
   let csvContent = '';
   rows.forEach(img => {
     const cols = [
@@ -1323,6 +1326,124 @@ function downloadOcclusionCsv() {
     ];
     csvContent += cols.map(escapeCsvField).join(',') + '\n';
   });
+  return csvContent;
+}
 
-  downloadTextAsFile(csvContent, `ankimed_slides_image_occlusion_${getFormattedDate()}.csv`);
+function downloadOcclusionCsv() {
+  const rows = slideImages.filter(img => img.included);
+  if (rows.length === 0) {
+    alert('請先選取並勾選至少一張圖片！');
+    return;
+  }
+
+  downloadTextAsFile(buildSlidesOcclusionCsvContent(rows), `ankigen_slides_image_occlusion_${getFormattedDate()}.csv`);
+}
+
+// 把圖片縮小成一張小預覽圖，跟原始圖片一起存進歷史紀錄（Supabase Storage）。
+// 縮圖用在歷史紀錄頁面快速顯示，原始檔另外上傳保留完整解析度，供之後重新下載匯入 Anki。
+function createPreviewBlob(file, maxDim = 480, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > height && width > maxDim) {
+        height = Math.round(height * (maxDim / width));
+        width = maxDim;
+      } else if (height >= width && height > maxDim) {
+        width = Math.round(width * (maxDim / height));
+        height = maxDim;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => {
+        URL.revokeObjectURL(objectUrl);
+        if (blob) resolve(blob); else reject(new Error('無法產生預覽圖片'));
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('圖片讀取失敗，無法產生預覽圖'));
+    };
+    img.src = objectUrl;
+  });
+}
+
+// 把選擇題模式目前的內容存進歷史紀錄（存進 Supabase，需要先登入）
+async function saveMcqExportToHistory() {
+  const rows = slideImages.filter(img => img.included);
+  if (rows.length === 0) {
+    alert('請先選取並勾選至少一張圖片！');
+    return;
+  }
+
+  const purpose = prompt('這批卡片是為了什麼而做的？（選填，之後在歷史紀錄裡可以看到）', '');
+  if (purpose === null) return; // 使用者按取消，不存
+
+  try {
+    const cards = await Promise.all(rows.map(async img => ({
+      filename: img.filename,
+      previewBlob: await createPreviewBlob(img.file),
+      originalBlob: img.file,
+      questionText: img.mcqQuestionText,
+      optionA: img.mcqOptionA,
+      optionB: img.mcqOptionB,
+      optionC: img.mcqOptionC,
+      optionD: img.mcqOptionD,
+      optionE: img.mcqOptionE,
+      optionF: img.mcqOptionF,
+      answer: img.mcqAnswer,
+      isMultiple: img.mcqIsMultiple,
+      notes: img.notes
+    })));
+
+    await AnkiGenHistory.saveRecord({
+      source: 'slides-mcq',
+      purpose: purpose.trim(),
+      cardCount: rows.length,
+      csvFilename: `ankigen_slides_mcq_${getFormattedDate()}.csv`,
+      csvContent: buildSlidesMcqCsvContent(rows),
+      cards
+    });
+    alert('已存入歷史紀錄！可以到頁面上方的「歷史紀錄」查看每張卡片當時的設計，或下載 CSV。');
+  } catch (error) {
+    console.error(error);
+    alert(`存入歷史紀錄失敗：\n${error.message || error}`);
+  }
+}
+
+// 把 Image Occlusion 模式目前的內容存進歷史紀錄
+async function saveOcclusionExportToHistory() {
+  const rows = slideImages.filter(img => img.included);
+  if (rows.length === 0) {
+    alert('請先選取並勾選至少一張圖片！');
+    return;
+  }
+
+  const purpose = prompt('這批卡片是為了什麼而做的？（選填，之後在歷史紀錄裡可以看到）', '');
+  if (purpose === null) return;
+
+  try {
+    const cards = await Promise.all(rows.map(async img => ({
+      filename: img.filename,
+      previewBlob: await createPreviewBlob(img.file),
+      originalBlob: img.file,
+      notes: img.notes
+    })));
+
+    await AnkiGenHistory.saveRecord({
+      source: 'slides-occlusion',
+      purpose: purpose.trim(),
+      cardCount: rows.length,
+      csvFilename: `ankigen_slides_image_occlusion_${getFormattedDate()}.csv`,
+      csvContent: buildSlidesOcclusionCsvContent(rows),
+      cards
+    });
+    alert('已存入歷史紀錄！可以到頁面上方的「歷史紀錄」查看每張卡片當時的設計，或下載 CSV。');
+  } catch (error) {
+    console.error(error);
+    alert(`存入歷史紀錄失敗：\n${error.message || error}`);
+  }
 }

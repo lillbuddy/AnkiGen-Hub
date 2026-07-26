@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnkiGen - 查看歷史紀錄設計</title>
+  <!-- 引入 Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- 引入 FontAwesome 圖標 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="history.css">
+</head>
+
+<body class="medical-theme">
+  <!-- 背景發光特效 -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <header class="app-header">
+    <div class="header-container">
+      <a class="logo" href="index.html">
+        <i class="fa-solid fa-lightbulb"></i>
+        <span>AnkiGen <span class="logo-accent">Hub</span></span>
+      </a>
+      <div class="app-desc">
+        <span class="app-slogan">The central hub for instant Anki creation</span>
+        <a href="history.html" class="nav-home-link"><i class="fa-solid fa-arrow-left"></i> 回歷史紀錄</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wizard-single-col" style="max-width: 1100px; margin-top: 30px;">
+    <div class="card-panel">
+      <div class="panel-header">
+        <h2><i class="fa-solid fa-eye"></i> <span id="review-title">查看設計</span></h2>
+        <div class="header-actions">
+          <button id="btn-review-download-csv" class="btn btn-success"><i class="fa-solid fa-file-csv"></i> 下載
+            CSV</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="review-login-required" class="notice-box" style="display:none;">
+          <i class="fa-solid fa-lock"></i>
+          <div>請先登入才能查看這筆歷史紀錄，點右上角的「登入」。</div>
+        </div>
+        <div id="review-not-found" style="display:none;">
+          <div class="notice-box">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <div>找不到這筆歷史紀錄，可能已經被刪除了。</div>
+          </div>
+        </div>
+        <div id="review-meta" class="review-meta"></div>
+        <div id="review-grid" class="review-grid"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>AnkiGen Hub &copy; 2026. 幫助你更有效率地製作 Anki 卡片。</p>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-ui.js"></script>
+  <script src="history-store.js"></script>
+  <script src="history-review.js"></script>
+</body>
+
+</html>

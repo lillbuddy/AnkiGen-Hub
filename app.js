@@ -4,6 +4,10 @@
 let parsedCards = [];
 let activePreviewIndex = 0; // 目前在模擬器預覽的卡片索引
 
+// 使用者上傳的考卷檔案（PDF / 照片），每筆為 { name, mimeType, base64 }
+let uploadedFiles = [];
+const MAX_FILE_SIZE_MB = 15; // 單一檔案大小上限（Gemini inline data 有整體請求大小限制）
+
 // DOM 元素
 const mdInput = document.getElementById('markdown-input');
 const btnParseAi = document.getElementById('btn-parse-ai');
@@ -12,10 +16,15 @@ const geminiModelSelect = document.getElementById('gemini-model-select');
 const geminiCustomModel = document.getElementById('gemini-custom-model');
 const btnLoadSample = document.getElementById('btn-load-sample');
 const btnClear = document.getElementById('btn-clear');
+const fileUploadInput = document.getElementById('file-upload-input');
+const btnChooseFiles = document.getElementById('btn-choose-files');
+const fileUploadList = document.getElementById('file-upload-list');
+const fileUploadWrapper = document.getElementById('file-upload-wrapper');
 const parsedResultsPanel = document.getElementById('parsed-results-panel');
 const parsedCount = document.getElementById('parsed-count');
 const cardsTableBody = document.getElementById('cards-table-body');
 const btnDownloadCsv = document.getElementById('btn-download-csv');
+const btnSaveHistory = document.getElementById('btn-save-history');
 
 // 模擬器 DOM 元素
 const ankiSimulatorCard = document.getElementById('anki-simulator-card');
@@ -409,8 +418,34 @@ document.addEventListener('DOMContentLoaded', () => {
   btnLoadSample.addEventListener('click', loadSample);
   btnClear.addEventListener('click', clearInput);
   btnDownloadCsv.addEventListener('click', downloadCSVFile);
+  btnSaveHistory.addEventListener('click', saveCurrentCardsToHistory);
   btnSimulateFlip.addEventListener('click', toggleFlipCard);
-  
+
+  // PDF / 照片上傳：點擊按鈕觸發選檔、選檔後讀取為 base64
+  btnChooseFiles.addEventListener('click', () => fileUploadInput.click());
+  fileUploadInput.addEventListener('change', (e) => {
+    handleFilesSelected(e.target.files);
+    fileUploadInput.value = ''; // 清空，允許重複選取同一檔案
+  });
+
+  // 支援拖放檔案到上傳區
+  ['dragover', 'dragenter'].forEach(evt => {
+    fileUploadWrapper.addEventListener(evt, (e) => {
+      e.preventDefault();
+      fileUploadWrapper.classList.add('dragover');
+    });
+  });
+  ['dragleave', 'dragend'].forEach(evt => {
+    fileUploadWrapper.addEventListener(evt, () => {
+      fileUploadWrapper.classList.remove('dragover');
+    });
+  });
+  fileUploadWrapper.addEventListener('drop', (e) => {
+    e.preventDefault();
+    fileUploadWrapper.classList.remove('dragover');
+    handleFilesSelected(e.dataTransfer.files);
+  });
+
   // 點選卡片本身也可以翻牌（排除選項點擊與解析區塊，避免影響點選和滾動）
   ankiSimulatorCard.addEventListener('click', (e) => {
     if (e.target.closest('.sim-option-btn') || e.target.closest('#sim-explanation-box')) {
@@ -509,6 +544,81 @@ function clearInput() {
   parsedCards = [];
   parsedResultsPanel.style.display = 'none';
   parsedCount.textContent = '0';
+  uploadedFiles = [];
+  renderFileUploadList();
+}
+
+// 將檔案讀取為 base64（不含 data:xxx;base64, 前綴）
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = () => reject(new Error(`讀取檔案「${file.name}」失敗`));
+    reader.readAsDataURL(file);
+  });
+}
+
+// 處理使用者選取/拖放的 PDF、照片檔案
+async function handleFilesSelected(fileList) {
+  const files = Array.from(fileList || []);
+  if (files.length === 0) return;
+
+  for (const file of files) {
+    const isPdf = file.type === 'application/pdf';
+    const isImage = file.type.startsWith('image/');
+    if (!isPdf && !isImage) {
+      alert(`「${file.name}」不是支援的格式，請上傳 PDF 或圖片檔案。`);
+      continue;
+    }
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      alert(`「${file.name}」超過 ${MAX_FILE_SIZE_MB}MB 大小限制，請壓縮後再上傳。`);
+      continue;
+    }
+    try {
+      const base64 = await readFileAsBase64(file);
+      uploadedFiles.push({ name: file.name, mimeType: file.type, base64 });
+    } catch (error) {
+      console.error(error);
+      alert(error.message || `讀取「${file.name}」時發生錯誤`);
+    }
+  }
+
+  renderFileUploadList();
+}
+
+// 從已上傳清單中移除某個檔案
+function removeUploadedFile(index) {
+  uploadedFiles.splice(index, 1);
+  renderFileUploadList();
+}
+
+// 重新渲染已上傳檔案的標籤清單
+function renderFileUploadList() {
+  fileUploadList.innerHTML = '';
+  uploadedFiles.forEach((f, index) => {
+    const chip = document.createElement('div');
+    chip.className = 'file-chip';
+
+    const icon = document.createElement('i');
+    icon.className = `file-chip-icon fa-solid ${f.mimeType === 'application/pdf' ? 'fa-file-pdf' : 'fa-file-image'}`;
+
+    const name = document.createElement('span');
+    name.className = 'file-chip-name';
+    name.textContent = f.name;
+    name.title = f.name;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'file-chip-remove';
+    removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    removeBtn.title = '移除此檔案';
+    removeBtn.addEventListener('click', () => removeUploadedFile(index));
+
+    chip.appendChild(icon);
+    chip.appendChild(name);
+    chip.appendChild(removeBtn);
+    fileUploadList.appendChild(chip);
+  });
 }
 
 // 智慧 Markdown 解析核心
@@ -948,32 +1058,25 @@ function toggleFlipCard() {
   ankiSimulatorCard.classList.toggle('flipped');
 }
 
-// 匯出 CSV (逗號分隔，欄位皆加上雙引號) 檔案供 Anki 匯入
-function downloadCSVFile() {
-  if (parsedCards.length === 0) return;
+// 匯出 CSV (逗號分隔，欄位皆加上雙引號) 檔案供 Anki 匯入；雙引號與逗號跳脫處理函數
+function escapeMcqCsvField(val) {
+  if (val === undefined || val === null) return '""';
+  let str = String(val).trim();
+  // 統一數學公式語法為 Anki/MathJax 原生的 \( \) \[ \]，
+  // 不論原始內容是 $...$ $$...$$ 還是 [$]...[/$] [$$]...[/$$]，匯入真正的 Anki 後都能正確渲染
+  str = convertMathDelimiters(str);
+  // 雙引號跳脫：Anki 標準為把 double quotes 改成兩個 double quotes
+  str = str.replace(/"/g, '""');
+  // 將多行換行符轉換成 HTML <br> 標籤，這樣 Anki 才能在一格中顯示換行
+  str = str.replace(/\n/g, '<br>');
+  return `"${str}"`;
+}
 
-  const headers = ["Question", "OptionA", "OptionB", "OptionC", "OptionD", "OptionE", "OptionF", "Answer", "IsMultiple", "Explanation"];
-
+// 組出匯出用的 CSV 文字內容（不寫入標題列，因為 Anki 匯入時會把標題當成一筆卡片；
+// 匯入 Anki 時請依照欄位順序手動對應：Question, OptionA~F, Answer, IsMultiple, Explanation）。
+// 抽成獨立函式是因為「下載 CSV」按鈕跟「存入歷史紀錄」都需要用到同一份內容。
+function buildMcqCsvContent() {
   let csvContent = "";
-
-  // 雙引號與逗號跳脫處理函數
-  function escapeField(val) {
-    if (val === undefined || val === null) return '""';
-    let str = String(val).trim();
-    // 統一數學公式語法為 Anki/MathJax 原生的 \( \) \[ \]，
-    // 不論原始內容是 $...$ $$...$$ 還是 [$]...[/$] [$$]...[/$$]，匯入真正的 Anki 後都能正確渲染
-    str = convertMathDelimiters(str);
-    // 雙引號跳脫：Anki 標準為把 double quotes 改成兩個 double quotes
-    str = str.replace(/"/g, '""');
-    // 將多行換行符轉換成 HTML <br> 標籤，這樣 Anki 才能在一格中顯示換行
-    str = str.replace(/\n/g, '<br>');
-    return `"${str}"`;
-  }
-
-  // 不寫入標題列 (Header Row)，因為 Anki 匯入時會把標題當成一筆卡片
-  // 匯入 Anki 時請依照欄位順序手動對應：Question, OptionA~F, Answer, IsMultiple, Explanation
-  
-  // 寫入內容資料
   parsedCards.forEach(card => {
     const row = [
       card.question,
@@ -987,20 +1090,55 @@ function downloadCSVFile() {
       card.isMultiple,
       card.explanation
     ];
-    csvContent += row.map(escapeField).join(',') + '\n';
+    csvContent += row.map(escapeMcqCsvField).join(',') + '\n';
   });
+  return csvContent;
+}
+
+function downloadCSVFile() {
+  if (parsedCards.length === 0) return;
+
+  const csvContent = buildMcqCsvContent();
 
   // 以 UTF-8 格式下載（加上 BOM 確保 Excel 或 Anki 都能正常讀取中文）
   const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  
+
   link.setAttribute("href", url);
-  link.setAttribute("download", `ankimed_export_${getFormattedDate()}.csv`);
+  link.setAttribute("download", `ankigen_mcq_${getFormattedDate()}.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+// 把目前的卡片存進歷史紀錄（存進 Supabase，需要先登入）
+async function saveCurrentCardsToHistory() {
+  if (parsedCards.length === 0) {
+    alert('目前沒有可以存入紀錄的卡片，請先解析考卷內容。');
+    return;
+  }
+
+  const purpose = prompt('這批卡片是為了什麼而做的？（選填，之後在歷史紀錄裡可以看到）', '');
+  if (purpose === null) return; // 使用者按取消，不存
+
+  const csvContent = buildMcqCsvContent();
+
+  try {
+    await AnkiGenHistory.saveRecord({
+      source: 'mcq',
+      purpose: purpose.trim(),
+      cardCount: parsedCards.length,
+      csvFilename: `ankigen_mcq_${getFormattedDate()}.csv`,
+      csvContent,
+      media: []
+    });
+    alert('已存入歷史紀錄！可以到頁面上方的「歷史紀錄」查看。');
+  } catch (error) {
+    console.error(error);
+    alert(`存入歷史紀錄失敗：\n${error.message || error}`);
+  }
 }
 
 // 取得目前時間戳記 (YYYYMMDD_HHMM)
@@ -1017,8 +1155,8 @@ function getFormattedDate() {
 // AI 智慧解析 (呼叫 Gemini API)
 async function parseInputWithGemini() {
   const text = mdInput.value.trim();
-  if (!text) {
-    alert("請先輸入考卷 Markdown 文字！");
+  if (!text && uploadedFiles.length === 0) {
+    alert("請先輸入考卷 Markdown 文字，或上傳 PDF / 照片檔案！");
     return;
   }
 
@@ -1047,8 +1185,15 @@ async function parseInputWithGemini() {
   btnParseAi.innerHTML = ""; // 顯示 CSS spinner
 
   try {
-    const prompt = `你是一個專業的考卷解析器。請將以下考卷文字解析為結構化的 JSON 陣列。
-每一題必須包含以下欄位（注意大小寫）：
+    const hasFiles = uploadedFiles.length > 0;
+    const sourceDesc = hasFiles
+      ? (text
+        ? '以下附上的 PDF 檔案／照片圖片（可能有多個檔案或多頁，請視為同一份考卷依序合併判讀），並參考額外補充文字'
+        : '以下附上的 PDF 檔案／照片圖片（可能有多個檔案或多頁，請視為同一份考卷依序合併判讀）')
+      : '以下考卷文字';
+
+    const prompt = `你是一個專業的考卷解析器。請將${sourceDesc}解析為結構化的 JSON 陣列。
+${hasFiles ? '若來源是圖片或掃描 PDF，請先自行辨識當中的文字內容，再進行解析；若圖片模糊或有部分無法辨識，請盡力推斷，不要省略整題。\n' : ''}每一題必須包含以下欄位（注意大小寫）：
 - id: 題號 (整數)
 - question: 題目文字 (去除前導題號與 Markdown 格式，保留乾淨的題目，若有換行或多行公式則以 <br> 換行)
 - optionA: 選項 A 內容 (去除 A. 或 A) 等前導符號)
@@ -1066,14 +1211,22 @@ async function parseInputWithGemini() {
 - 請統一使用行內公式 \\( ... \\) 或區塊公式 \\[ ... \\] 包裹公式。若原文是用 $...$ 或 $$...$$ 或 [$]...[/$] 等其他寫法，請一併轉換成 \\( ... \\) / \\[ ... \\] 格式後再輸出。
 - 因為輸出必須是合法 JSON，公式中的反斜線 \\ 在 JSON 字串中需正確跳脫為 \\\\，例如公式 \\(x^2\\) 在 JSON 字串內應寫成 "\\\\(x^2\\\\)"。
 
-輸出格式必須是純 JSON 陣列，不要包裹在 \`\`\`json ... \`\`\` 內，必須直接輸出合法的 JSON。
+輸出格式必須是純 JSON 陣列，不要包裹在 \`\`\`json ... \`\`\` 內，必須直接輸出合法的 JSON。${text ? `\n\n${hasFiles ? '補充文字內容：' : '以下是待解析的考卷內容：'}\n${text}` : ''}`;
 
-以下是待解析的考卷內容：
-${text}`;
+    // 組合請求內容：文字 prompt 放最前面，接著依序附上使用者上傳的 PDF / 圖片檔案
+    const parts = [{ text: prompt }];
+    uploadedFiles.forEach(f => {
+      parts.push({
+        inlineData: {
+          mimeType: f.mimeType,
+          data: f.base64
+        }
+      });
+    });
 
     // 使用選擇的 Gemini 模型
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -1081,9 +1234,7 @@ ${text}`;
       },
       body: JSON.stringify({
         contents: [{
-          parts: [{
-            text: prompt
-          }]
+          parts
         }],
         generationConfig: {
           responseMimeType: "application/json"
