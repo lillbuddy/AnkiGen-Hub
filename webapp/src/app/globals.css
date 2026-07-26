@@ -305,6 +305,71 @@ body {
     gap: 6px;
   }
 
+  /* PDF / 照片上傳區，沿用舊版靜態網站 style.css 的設計 */
+  .file-upload-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    background-color: var(--color-subtle);
+    border: 1px dashed var(--color-panel-border);
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    transition: all 0.2s ease;
+  }
+
+  .file-upload-wrapper.dragover {
+    border-color: var(--color-primary);
+    background-color: rgba(59, 111, 196, 0.06);
+  }
+
+  .file-upload-hint {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .file-upload-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .file-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 20px;
+    padding: 4px 8px 4px 12px;
+    font-size: 12px;
+    color: var(--color-text-primary);
+    max-width: 220px;
+  }
+
+  .file-chip-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .file-chip-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    padding: 2px 4px;
+    display: flex;
+    align-items: center;
+  }
+
+  .file-chip-remove:hover {
+    color: var(--color-danger);
+  }
+
   /* Gemini API key 輸入列 */
   .api-key-wrapper {
     display: flex;

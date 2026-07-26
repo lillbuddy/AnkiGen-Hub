@@ -7,7 +7,7 @@ import { buildMcqCsv, downloadCsv } from '@/lib/export-csv'
 import { clearDrawer, getDrawerCards, syncDrawerOwner } from '@/lib/drawer-storage'
 import { useCurrentUser } from '@/lib/use-current-user'
 import { getSavedGeminiApiKey, saveGeminiApiKey } from '@/lib/gemini-key-storage'
-import { callGeminiJson } from '@/lib/gemini-client'
+import { callGeminiJson, type GeminiInlineFile } from '@/lib/gemini-client'
 import { decodeText } from '@/lib/text-obfuscation'
 import type { McqCard } from '@/lib/history-types'
 import { addCardsToAnki, ensureAnkiGenModelExists, ensureDeckExists, type AnkiCardInput } from '@/lib/anki-connect'
@@ -53,17 +53,54 @@ D. 左心室肥大（Left Ventricular Hypertrophy）
 解析：患者聽診特徵為典型的二尖瓣狹窄（Mitral Stenosis）。二尖瓣狹窄會導致左心房壓力增高並擴大，進而引發心房顫動與肺靜脈高壓/肺動脈高壓。然而，因為血液進入左心室受阻，左心室通常不會肥大。`
 
 // 跟 anki-*-templates.ts 同樣的考量：把這段 Prompt 指示用 decodeText(base64) 包起來，
-// 避免打包後的 JS 檔案裡可以直接搜尋到完整內容。要修改內容時，先把 base64 還原成明文
-// 修改（留意 %%SOURCE_TEXT%% 這個佔位字串要保留在正確位置），改完再重新編碼回去。
+// 避免打包後的 JS 檔案裡可以直接搜尋到完整內容。這段只包含固定不變的 JSON 格式與規則說明；
+// 開頭的情境句與結尾的來源文字是明文組出來的（要依有沒有上傳檔案而變化），見 buildPrompt()。
+// 要修改內容時，先把 base64 還原成明文修改，改完再重新編碼回去。
 const PROMPT_TEMPLATE_B64 =
-  '5L2g5piv5LiA5YCL5bmr5b+Z5oqK5paH5a2X5YWn5a656L2J5o+b5oiQIEFua2kg6YG45pOH6aGM5Y2h54mH55qE5Yqp5omL44CC6KuL6Zax6K6A5Lul5LiL5paH5a2X5YWn5a6577yM55uh6YeP5oq95Y+W5oiW5pS55a+r5oiQ5aSa5by16YG45pOH6aGM77yM55SoIEpTT04g6Zmj5YiX5qC85byP5Zue5YKz77yM5LiN6KaB5pyJ5YW25LuW5paH5a2X5oiW6Kqq5piO44CCCgrmr4/lgIvlhYPntKDnmoTmoLzlvI/vvJoKewogICJxdWVzdGlvblRleHQiOiAi6aGM55uu5YWn5a65IiwKICAib3B0aW9uQSI6ICLpgbjpoIVBIiwgIm9wdGlvbkIiOiAi6YG46aCFQiIsICJvcHRpb25DIjogIumBuOmghUMiLCAib3B0aW9uRCI6ICLpgbjpoIVEIiwgIm9wdGlvbkUiOiAi6YG46aCFRSIsICJvcHRpb25GIjogIumBuOmghUYiLAogICJhbnN3ZXIiOiAi5q2j56K6562U5qGI55qE5a2X5q+N77yM5L6L5aaC44CMQeOAje+8m+WmguaenOaYr+WkmumBuOmhjOWwseeUqOWkmuWAi+Wtl+avje+8jOS+i+WmguOAjEFD44CNIiwKICAiaXNNdWx0aXBsZSI6IHRydWUg5oiWIGZhbHNl77yI5piv5ZCm54K65aSa6YG46aGM77yJLAogICJub3RlcyI6ICLnsKHnn63nmoTop6Pph4vmiJboo5zlhYXoqqrmmI7vvIjpgbjloavvvIzmspLmnInlsLHnlZnnqbrlrZfkuLLvvIkiCn0KCuimj+WJh++8mgotIOiHs+WwkeimgeaciSBvcHRpb25BIOWSjCBvcHRpb25C77yM55So5LiN5Yiw55qE6YG46aCF55WZ56m65a2X5LiyICIiCi0g5aaC5p6c5YWn5a655pys6Lqr5YyF5ZCr5pW45a245YWs5byP77yM57at5oyB5Y6f5pys55qE5a+r5rOV77yI5L6L5aaCICR4XjIkIOaIliBcKHheMlwp77yJ77yM5LiN6KaB6Ieq5bex5pS55a+rCgrmloflrZflhaflrrnvvJoKIiIiCiUlU09VUkNFX1RFWFQlJQoiIiI='
+  '5q+P5YCL5YWD57Sg55qE5qC85byP77yaCnsKICAicXVlc3Rpb25UZXh0IjogIumhjOebruWFp+WuuSIsCiAgIm9wdGlvbkEiOiAi6YG46aCFQSIsICJvcHRpb25CIjogIumBuOmghUIiLCAib3B0aW9uQyI6ICLpgbjpoIVDIiwgIm9wdGlvbkQiOiAi6YG46aCFRCIsICJvcHRpb25FIjogIumBuOmghUUiLCAib3B0aW9uRiI6ICLpgbjpoIVGIiwKICAiYW5zd2VyIjogIuato+eiuuetlOahiOeahOWtl+avje+8jOS+i+WmguOAjEHjgI3vvJvlpoLmnpzmmK/lpJrpgbjpoYzlsLHnlKjlpJrlgIvlrZfmr43vvIzkvovlpoLjgIxBQ+OAjSIsCiAgImlzTXVsdGlwbGUiOiB0cnVlIOaIliBmYWxzZe+8iOaYr+WQpueCuuWkmumBuOmhjO+8iSwKICAibm90ZXMiOiAi57Ch55+t55qE6Kej6YeL5oiW6KOc5YWF6Kqq5piO77yI6YG45aGr77yM5rKS5pyJ5bCx55WZ56m65a2X5Liy77yJIgp9Cgropo/liYfvvJoKLSDoh7PlsJHopoHmnIkgb3B0aW9uQSDlkowgb3B0aW9uQu+8jOeUqOS4jeWIsOeahOmBuOmgheeVmeepuuWtl+S4siAiIgotIOWmguaenOWFp+WuueacrOi6q+WMheWQq+aVuOWtuOWFrOW8j++8jOe2reaMgeWOn+acrOeahOWvq+azle+8iOS+i+WmgiAkeF4yJCDmiJYgXCh4XjJcKe+8ie+8jOS4jeimgeiHquW3seaUueWvqw=='
 
-const PROMPT_TEMPLATE = (sourceText: string) => decodeText(PROMPT_TEMPLATE_B64).split('%%SOURCE_TEXT%%').join(sourceText)
+// files 存在時，情境句改成請 AI 讀附件（可能有文字補充）；沒有 files 就跟原本一樣單純讀文字。
+function buildPrompt(sourceText: string, hasFiles: boolean): string {
+  const intro = hasFiles
+    ? `你是一個幫忙把上傳的 PDF / 照片內容轉換成 Anki 選擇題卡片的助手。請閱讀以下附上的 PDF 檔案／照片圖片（可能有多個檔案或多頁，請視為同一份考卷依序合併判讀）${sourceText ? '，並參考額外補充文字' : ''}，盡量抽取或改寫成多張選擇題，用 JSON 陣列格式回傳，不要有其他文字或說明。若圖片模糊或部分無法辨識，請盡力推斷，不要省略整題。`
+    : '你是一個幫忙把文字內容轉換成 Anki 選擇題卡片的助手。請閱讀以下文字內容，盡量抽取或改寫成多張選擇題，用 JSON 陣列格式回傳，不要有其他文字或說明。'
 
-async function callGemini(apiKey: string, model: string, sourceText: string): Promise<McqCard[]> {
-  const parsed = await callGeminiJson(apiKey, model, PROMPT_TEMPLATE(sourceText))
+  const tail = sourceText
+    ? `\n\n${hasFiles ? '補充文字內容：' : '文字內容：'}\n"""\n${sourceText}\n"""`
+    : ''
+
+  return `${intro}\n\n${decodeText(PROMPT_TEMPLATE_B64)}${tail}`
+}
+
+async function callGemini(
+  apiKey: string,
+  model: string,
+  sourceText: string,
+  files: GeminiInlineFile[]
+): Promise<McqCard[]> {
+  const prompt = buildPrompt(sourceText, files.length > 0)
+  const parsed = await callGeminiJson(apiKey, model, prompt, files)
   if (!Array.isArray(parsed)) throw new Error('Gemini 回傳的格式不是陣列')
   return parsed as McqCard[]
+}
+
+const MAX_FILE_SIZE_MB = 15 // 單一檔案大小上限（Gemini inline data 有整體請求大小限制）
+
+interface UploadedFile {
+  localId: string
+  name: string
+  mimeType: string
+  base64: string
+}
+
+// 把檔案讀成 base64（不含 data:xxx;base64, 前綴），供 Gemini inlineData 使用
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve((reader.result as string).split(',')[1])
+    reader.onerror = () => reject(new Error(`讀取檔案「${file.name}」失敗`))
+    reader.readAsDataURL(file)
+  })
 }
 
 function makeCardState(card: Partial<McqCard> = {}): CardState {
@@ -94,8 +131,11 @@ export default function McqToolPage() {
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
   const [previewIndex, setPreviewIndex] = useState(0)
   const [fromDrawer, setFromDrawer] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const [isDragOver, setIsDragOver] = useState(false)
   const lastSavedSignatureRef = useRef<string | null>(null)
   const hasLoadedFromDrawerRef = useRef(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     // localStorage 只在瀏覽器端讀得到，故意等 mount 後才讀，讓使用者用過一次的
@@ -147,15 +187,16 @@ export default function McqToolPage() {
       setMessage({ type: 'error', text: '請先輸入 Gemini API Key' })
       return
     }
-    if (!sourceText.trim()) {
-      setMessage({ type: 'error', text: '請先貼上要解析的文字內容' })
+    if (!sourceText.trim() && uploadedFiles.length === 0) {
+      setMessage({ type: 'error', text: '請先貼上要解析的文字內容，或上傳 PDF / 照片檔案' })
       return
     }
 
     setParsing(true)
     setMessage(null)
     try {
-      const parsed = await callGemini(apiKey.trim(), model, sourceText)
+      const files: GeminiInlineFile[] = uploadedFiles.map((f) => ({ mimeType: f.mimeType, base64: f.base64 }))
+      const parsed = await callGemini(apiKey.trim(), model, sourceText, files)
       setCards((prev) => [...prev, ...parsed.map((c) => makeCardState(c))])
       setMessage({ type: 'ok', text: `解析出 ${parsed.length} 張卡片` })
     } catch (error) {
@@ -163,6 +204,35 @@ export default function McqToolPage() {
     } finally {
       setParsing(false)
     }
+  }
+
+  // 驗證並讀取使用者選取／拖放的 PDF、照片檔案，轉成 base64 存進 state
+  async function handleFilesSelected(fileList: FileList | null) {
+    const files = Array.from(fileList ?? [])
+    if (files.length === 0) return
+
+    for (const file of files) {
+      const isPdf = file.type === 'application/pdf'
+      const isImage = file.type.startsWith('image/')
+      if (!isPdf && !isImage) {
+        alert(`「${file.name}」不是支援的格式，請上傳 PDF 或圖片檔案。`)
+        continue
+      }
+      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        alert(`「${file.name}」超過 ${MAX_FILE_SIZE_MB}MB 大小限制，請壓縮後再上傳。`)
+        continue
+      }
+      try {
+        const base64 = await readFileAsBase64(file)
+        setUploadedFiles((prev) => [...prev, { localId: crypto.randomUUID(), name: file.name, mimeType: file.type, base64 }])
+      } catch (error) {
+        alert(error instanceof Error ? error.message : `讀取「${file.name}」時發生錯誤`)
+      }
+    }
+  }
+
+  function removeUploadedFile(localId: string) {
+    setUploadedFiles((prev) => prev.filter((f) => f.localId !== localId))
   }
 
   function updateCard(localId: string, patch: Partial<CardState>) {
@@ -182,6 +252,7 @@ export default function McqToolPage() {
   function handleClear() {
     setSourceText('')
     setCards([])
+    setUploadedFiles([])
     setMessage(null)
   }
 
@@ -268,7 +339,7 @@ export default function McqToolPage() {
           </div>
           <div className="panel-body">
             <p className="instruction-text">
-              貼上你的文字內容（例如考卷、筆記），系統會用 AI 自動解析題號、題目、選項、正確答案與解析。
+              貼上你的文字內容（例如考卷、筆記），或直接上傳 PDF / 拍照圖片，AI 會自動解析題號、題目、選項、正確答案與解析。
             </p>
 
             <div className="api-key-wrapper">
@@ -308,8 +379,67 @@ export default function McqToolPage() {
               （額度限制較寬鬆）；但 lite 版本能處理的資料量較小，單次貼上的內容不要太多，以免生成失敗或跑不出結果，建議分批處理。
             </p>
 
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf,image/*"
+              multiple
+              hidden
+              onChange={(e) => {
+                void handleFilesSelected(e.target.files)
+                e.target.value = '' // 清空，允許重複選取同一檔案
+              }}
+            />
+            <div
+              className={`file-upload-wrapper${isDragOver ? ' dragover' : ''}`}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setIsDragOver(true)
+              }}
+              onDragEnter={(e) => {
+                e.preventDefault()
+                setIsDragOver(true)
+              }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDragEnd={() => setIsDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault()
+                setIsDragOver(false)
+                void handleFilesSelected(e.dataTransfer.files)
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="btn btn-secondary btn-sm"
+              >
+                📎 上傳 PDF / 照片
+              </button>
+              <span className="file-upload-hint">可多選或拖放；AI 會直接讀取檔案內容，不需先轉成文字</span>
+              {uploadedFiles.length > 0 && (
+                <div className="file-upload-list">
+                  {uploadedFiles.map((f) => (
+                    <div key={f.localId} className="file-chip">
+                      <span>{f.mimeType === 'application/pdf' ? '📄' : '🖼️'}</span>
+                      <span className="file-chip-name" title={f.name}>
+                        {f.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeUploadedFile(f.localId)}
+                        className="file-chip-remove"
+                        title="移除此檔案"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <textarea
-              placeholder="貼上文字內容，例如：
+              placeholder="貼上文字內容，或直接上傳上方的 PDF / 照片檔案，例如：
 1. 關於二尖瓣狹窄的敘述，下列何者錯誤？
 A. 最常見的原因是風濕熱
 B. 心尖處可聽到舒張期心雜音
