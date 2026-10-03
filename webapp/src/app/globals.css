@@ -1,69 +1,81 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #1e293b;
+  --background: #f4f7fb;
+  --foreground: #172033;
 }
 
-/* 白底 + 藍色系配色的設計變數，沿用舊版 AnkiGen Hub 靜態網站的設計。
+/* 白底 + 藍色系配色的設計變數，沿用舊版 AnkiGen Hub 靜態網站的品牌藍。
    直接寫在 @theme 底下（不是 @theme inline），Tailwind 才會自動生成
    bg-primary、text-accent、border-panel-border 這類 utility class。 */
 @theme {
-  --color-primary: #3B6FC4;
-  --color-primary-hover: #14284A;
-  --color-accent: #14284A;
-  --color-accent-light: #14284A1a;
+  --color-primary: #3b6fc4;
+  --color-primary-hover: #2c58a6;
+  --color-primary-soft: #ebf1fb;
+  --color-accent: #14284a;
+  --color-accent-light: #14284a1a;
   --color-success: #16a34a;
   --color-success-hover: #15803d;
+  --color-success-soft: #edf9f1;
   --color-danger: #dc2626;
   --color-danger-hover: #b91c1c;
+  --color-danger-soft: #fef2f2;
 
   --color-panel: #ffffff;
   --color-panel-border: #e2e8f0;
-  --color-subtle: #f1f5f9;
+  --color-field-border: #d5dde8;
+  --color-subtle: #f5f7fb;
 
-  --color-text-primary: #1e293b;
-  --color-text-secondary: #64748b;
+  --color-text-primary: #172033;
+  --color-text-secondary: #5c6b80;
 
-  --shadow-panel-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
-  --shadow-panel-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-panel-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-panel-md: 0 2px 4px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.08);
+  --shadow-focus: 0 0 0 3px rgba(59, 111, 196, 0.16);
 }
 
+/* Inter / Outfit 沒有中文字形，明確列出各平台的繁中字體當備援，
+   Windows 才不會掉到預設的新細明體。 */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-outfit);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-display: var(--font-outfit), "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  line-height: 1.6;
+}
+
+::selection {
+  background-color: rgba(59, 111, 196, 0.18);
 }
 
 /* 背景裝飾：柔和漸層圓形，固定在畫面上不隨內容捲動，沿用舊版靜態網站的設計 */
 .bg-glow {
   position: fixed;
-  width: 600px;
-  height: 600px;
+  width: 640px;
+  height: 640px;
   border-radius: 50%;
-  filter: blur(150px);
+  filter: blur(140px);
   pointer-events: none;
   z-index: -1;
-  opacity: 0.4;
+  opacity: 0.5;
 }
 
 .bg-glow-1 {
-  background: rgba(59, 111, 196, 0.15);
-  top: -200px;
-  right: -100px;
+  background: rgba(59, 111, 196, 0.16);
+  top: -240px;
+  right: -120px;
 }
 
 .bg-glow-2 {
-  background: rgba(20, 40, 74, 0.12);
-  bottom: 100px;
-  left: -150px;
+  background: rgba(99, 102, 241, 0.1);
+  bottom: 40px;
+  left: -180px;
 }
 
 /* 這些自訂 class 一定要放進 @layer components，不能寫成不在任何 layer 裡的普通 CSS。
@@ -72,17 +84,12 @@ body {
    結果就是像 .field-input { width:100% } 這種規則會蓋掉外面想加的 w-auto，怎麼加都沒用。
    放進 @layer components 後，兩者才會照 Tailwind 期待的「utility 蓋過 component」規則走。 */
 @layer components {
-  /* 卡片容器：白底、淡邊框、輕微陰影，取代原本裸的 border border-gray-300 */
+  /* 卡片容器：白底、淡邊框、輕微陰影 */
   .card-panel {
     background-color: var(--color-panel);
     border: 1px solid var(--color-panel-border);
-    border-radius: 12px;
+    border-radius: 16px;
     box-shadow: var(--shadow-panel-sm);
-    transition: box-shadow 0.2s ease;
-  }
-
-  .card-panel:hover {
-    box-shadow: var(--shadow-panel-md);
   }
 
   /* 按鈕 */
@@ -93,11 +100,14 @@ body {
     gap: 6px;
     font-weight: 600;
     font-size: 14px;
+    line-height: 1.4;
     padding: 8px 16px;
-    border-radius: 9px;
-    border: none;
+    border-radius: 10px;
+    border: 1px solid transparent;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease,
+      color 0.15s ease;
   }
 
   .btn:disabled {
@@ -108,7 +118,7 @@ body {
 
   .btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px var(--color-accent-light);
+    box-shadow: var(--shadow-focus);
   }
 
   .btn:active:not(:disabled) {
@@ -116,122 +126,146 @@ body {
   }
 
   .btn-sm {
-    padding: 5px 12px;
+    padding: 6px 12px;
     font-size: 13px;
+    border-radius: 9px;
   }
 
   .btn-xs {
-    padding: 3px 8px;
-    font-size: 11px;
+    padding: 3px 9px;
+    font-size: 12px;
+    border-radius: 7px;
   }
 
   .btn-lg {
-    padding: 11px 22px;
+    padding: 12px 22px;
     font-size: 15px;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 
   .btn-primary {
     background-color: var(--color-primary);
     color: #ffffff;
-    box-shadow: 0 1px 2px rgba(59, 111, 196, 0.15), 0 4px 10px rgba(59, 111, 196, 0.18);
+    box-shadow: 0 1px 2px rgba(59, 111, 196, 0.2), 0 4px 12px rgba(59, 111, 196, 0.2);
   }
 
   .btn-primary:hover:not(:disabled) {
     background-color: var(--color-primary-hover);
-    box-shadow: 0 2px 4px rgba(59, 111, 196, 0.18), 0 6px 16px rgba(59, 111, 196, 0.24);
+    box-shadow: 0 2px 4px rgba(59, 111, 196, 0.22), 0 8px 20px rgba(59, 111, 196, 0.26);
     transform: translateY(-1px);
   }
 
   .btn-secondary {
     background-color: var(--color-panel);
     color: var(--color-text-primary);
-    border: 1px solid var(--color-panel-border);
+    border-color: var(--color-field-border);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   }
 
   .btn-secondary:hover:not(:disabled) {
     background-color: var(--color-subtle);
-    border-color: #cbd5e1;
+    border-color: #c3cddb;
     transform: translateY(-1px);
   }
 
   .btn-success {
     background-color: var(--color-success);
     color: #ffffff;
-    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.15), 0 4px 10px rgba(22, 163, 74, 0.18);
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2), 0 4px 12px rgba(22, 163, 74, 0.18);
   }
 
   .btn-success:hover:not(:disabled) {
     background-color: var(--color-success-hover);
-    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.18), 0 6px 16px rgba(22, 163, 74, 0.24);
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2), 0 8px 20px rgba(22, 163, 74, 0.24);
     transform: translateY(-1px);
   }
 
   .btn-danger-outline {
-    background-color: transparent;
+    background-color: var(--color-panel);
     color: var(--color-danger);
-    border: 1px solid rgba(220, 38, 38, 0.4);
+    border-color: rgba(220, 38, 38, 0.35);
   }
 
   .btn-danger-outline:hover:not(:disabled) {
-    background-color: rgba(220, 38, 38, 0.08);
+    background-color: var(--color-danger-soft);
     border-color: var(--color-danger);
   }
 
   /* 表單輸入框 */
   .field-input {
     width: 100%;
-    border: 1px solid var(--color-panel-border);
-    border-radius: 8px;
-    padding: 8px 12px;
+    border: 1px solid var(--color-field-border);
+    border-radius: 10px;
+    padding: 9px 12px;
     font-size: 14px;
+    line-height: 1.6;
     background-color: var(--color-panel);
     color: var(--color-text-primary);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
+  .field-input::placeholder,
+  .cell-input::placeholder,
+  .qc-input::placeholder {
+    color: #9aa7b8;
+  }
+
   .field-input:focus {
     outline: none;
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px var(--color-accent-light);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus);
   }
 
   textarea.field-input {
     font-family: inherit;
+    resize: vertical;
   }
 
-  /* 首頁的工具卡片，沿用舊版靜態網站 home.css 的設計 */
+  textarea.field-input.font-mono {
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  /* 首頁的工具卡片 */
   .tool-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     background: var(--color-panel);
     border: 1px solid var(--color-panel-border);
-    border-radius: 16px;
+    border-radius: 20px;
     box-shadow: var(--shadow-panel-sm);
     padding: 28px;
     text-decoration: none;
     color: inherit;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   }
 
   .tool-card:hover {
     box-shadow: var(--shadow-panel-md);
-    border-color: var(--color-primary);
-    transform: translateY(-2px);
+    border-color: rgba(59, 111, 196, 0.45);
+    transform: translateY(-3px);
   }
 
   .tool-icon {
     width: 52px;
     height: 52px;
-    border-radius: 12px;
-    background-color: rgba(59, 111, 196, 0.1);
-    color: var(--color-primary);
+    border-radius: 14px;
+    background-color: var(--color-primary-soft);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
-    margin-bottom: 16px;
+    font-size: 24px;
+    margin-bottom: 18px;
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .tool-icon-violet {
+    background-color: #f1edfd;
+  }
+
+  .tool-icon-teal {
+    background-color: #e6f6f4;
   }
 
   .tool-card:hover .tool-icon {
@@ -242,7 +276,7 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 16px;
+    margin-top: 18px;
     font-size: 14px;
     font-weight: 600;
     color: var(--color-primary);
@@ -253,65 +287,206 @@ body {
     gap: 10px;
   }
 
-  /* 兩欄工具頁版面（例如文字選擇題產生器），沿用舊版 mcq.html 的 .app-container 設計 */
+  /* 首頁標題上方的小標籤 */
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-panel-border);
+    box-shadow: var(--shadow-panel-sm);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  .hero-highlight {
+    background: linear-gradient(120deg, #3b6fc4 0%, #6366f1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* 工具頁版面：上排「輸入區 + 模擬器」兩欄，加上 col-span-full 的區塊（例如題目編輯區）
+     會獨佔下方一整列，表格與欄位才有足夠寬度閱讀。 */
   .app-container {
+    width: 100%;
     max-width: 1400px;
-    margin: 30px auto;
-    padding: 0 30px;
+    margin: 28px auto 40px;
+    padding: 0 32px;
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 30px;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 24px;
   }
 
   @media (max-width: 1024px) {
     .app-container {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
+  @media (max-width: 640px) {
+    .app-container {
+      padding: 0 16px;
+      margin-top: 16px;
+    }
+  }
+
+  /* 模擬器所在的欄位：撐滿跟輸入區一樣的高度（卡片在剩餘空間置中），並預留頁首高度，
+     捲回這裡時不會被頁首蓋住 */
+  .simulator-slot {
+    display: flex;
+    flex-direction: column;
+    scroll-margin-top: 84px;
+  }
+
+  .simulator-slot > .card-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .simulator-slot > .card-panel > .panel-body {
+    flex: 1;
+  }
+
   .panel-header {
-    padding: 20px 25px;
+    padding: 16px 24px;
     border-bottom: 1px solid var(--color-panel-border);
+    border-radius: 15px 15px 0 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 15px;
-    background-color: var(--color-subtle);
+    gap: 12px;
+    background: linear-gradient(180deg, #fbfcfe 0%, #f6f8fc 100%);
   }
 
   .panel-header h2 {
     font-family: var(--font-display);
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: 10px;
     color: var(--color-text-primary);
   }
 
+  /* 面板標題前的步驟編號 */
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background-color: var(--color-primary);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .count-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
   .panel-body {
-    padding: 25px;
+    padding: 24px;
+  }
+
+  @media (max-width: 640px) {
+    .panel-header {
+      padding: 14px 16px;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
   }
 
   .instruction-text {
     font-size: 14px;
     color: var(--color-text-secondary);
-    margin-bottom: 15px;
+    margin-bottom: 16px;
+  }
+
+  .instruction-text code,
+  .notice-box code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background-color: var(--color-subtle);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 5px;
+    padding: 1px 5px;
   }
 
   .row-actions {
     display: flex;
-    gap: 6px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* 解析／存入等動作的結果訊息 */
+  .status-message {
+    font-size: 14px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+  }
+
+  .status-ok {
+    color: var(--color-success-hover);
+    background-color: var(--color-success-soft);
+    border-color: #bfe6cc;
+  }
+
+  .status-error {
+    color: var(--color-danger-hover);
+    background-color: var(--color-danger-soft);
+    border-color: #fbcaca;
+  }
+
+  /* 「存入 Anki 前請先開啟 Anki」提醒 */
+  .anki-open-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background-color: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 13px;
+  }
+
+  .anki-open-hint strong {
+    font-weight: 700;
   }
 
   /* 可收合的提示（例如免費 API Key 的 lite 模型使用建議），預設收起來以免佔版面 */
   .hint-collapsible summary {
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--color-text-secondary);
     list-style: none;
+    width: fit-content;
+  }
+
+  .hint-collapsible summary:hover {
+    color: var(--color-primary);
   }
 
   .hint-collapsible summary::-webkit-details-marker {
@@ -321,7 +496,7 @@ body {
   .hint-collapsible summary::before {
     content: '▸';
     display: inline-block;
-    width: 12px;
+    width: 14px;
     transition: transform 0.15s ease;
   }
 
@@ -329,56 +504,61 @@ body {
     transform: rotate(90deg);
   }
 
-  /* 輸入方式切換：貼上文字 / 上傳 PDF、照片 二選一 */
+  /* 輸入方式切換：貼上文字 / 上傳 PDF、照片 二選一（分段切換鈕） */
   .input-method-tabs {
     display: flex;
-    gap: 8px;
-    margin-bottom: 15px;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 16px;
+    background-color: var(--color-subtle);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 12px;
   }
 
   .input-method-tab {
     flex: 1;
     padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px solid var(--color-panel-border);
-    background-color: var(--color-panel);
+    border-radius: 9px;
+    border: none;
+    background-color: transparent;
     color: var(--color-text-secondary);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   }
 
   .input-method-tab:hover {
-    background-color: var(--color-subtle);
+    color: var(--color-text-primary);
   }
 
   .input-method-tab.active {
-    background-color: var(--color-primary);
-    border-color: var(--color-primary);
-    color: #ffffff;
+    background-color: var(--color-panel);
+    color: var(--color-primary);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.06);
   }
 
-  /* PDF / 照片上傳區，沿用舊版靜態網站 style.css 的設計 */
+  /* PDF / 照片上傳區 */
   .file-upload-wrapper {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 10px 12px;
     background-color: var(--color-subtle);
-    border: 1px dashed var(--color-panel-border);
-    border-radius: 8px;
-    padding: 10px 15px;
-    margin-bottom: 15px;
-    transition: all 0.2s ease;
+    border: 1.5px dashed #c8d2df;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
   }
 
   .file-upload-wrapper.dragover {
     border-color: var(--color-primary);
-    background-color: rgba(59, 111, 196, 0.06);
+    background-color: var(--color-primary-soft);
   }
 
   .file-upload-hint {
+    flex: 1 1 240px;
     font-size: 12px;
     color: var(--color-text-secondary);
   }
@@ -396,11 +576,11 @@ body {
     gap: 6px;
     background-color: var(--color-panel);
     border: 1px solid var(--color-panel-border);
-    border-radius: 20px;
+    border-radius: 999px;
     padding: 4px 8px 4px 12px;
     font-size: 12px;
     color: var(--color-text-primary);
-    max-width: 220px;
+    max-width: 240px;
   }
 
   .file-chip-name {
@@ -427,19 +607,21 @@ body {
   /* Gemini API key 輸入列 */
   .api-key-wrapper {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
+    gap: 8px 12px;
     background-color: var(--color-subtle);
     border: 1px solid var(--color-panel-border);
-    border-radius: 8px;
-    padding: 8px 15px;
-    margin-bottom: 15px;
-    transition: all 0.2s ease;
+    border-radius: 12px;
+    padding: 8px 14px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
   }
 
   .api-key-wrapper:focus-within {
+    background-color: var(--color-panel);
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(59, 111, 196, 0.12);
+    box-shadow: var(--shadow-focus);
   }
 
   .api-key-input {
@@ -448,35 +630,36 @@ body {
     outline: none;
     color: var(--color-text-primary);
     font-size: 13px;
-    flex-grow: 1;
+    flex: 1 1 160px;
     min-width: 0;
   }
 
   .api-key-divider {
-    color: var(--color-panel-border);
+    color: var(--color-field-border);
     font-weight: 300;
     user-select: none;
   }
 
   .model-select {
-    background-color: #ffffff;
-    border: 1px solid var(--color-panel-border);
-    border-radius: 4px;
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-field-border);
+    border-radius: 8px;
     color: var(--color-text-primary);
-    padding: 4px 8px;
+    padding: 5px 8px;
     font-size: 12px;
     outline: none;
     cursor: pointer;
+    max-width: 100%;
   }
 
   .model-select:focus {
     border-color: var(--color-primary);
   }
 
-  /* 卡片解析結果表格 */
+  /* 表格型的編輯區（克漏字、圖片選擇題） */
   .table-container {
     overflow-x: auto;
-    border-radius: 8px;
+    border-radius: 12px;
     border: 1px solid var(--color-panel-border);
   }
 
@@ -489,9 +672,13 @@ body {
 
   .editable-table th,
   .editable-table td {
-    padding: 12px 15px;
+    padding: 12px 14px;
     border-bottom: 1px solid var(--color-panel-border);
     vertical-align: middle;
+  }
+
+  .editable-table tbody tr:last-child td {
+    border-bottom: none;
   }
 
   .editable-table th {
@@ -500,38 +687,56 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     font-size: 12px;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+  }
+
+  .editable-table tbody tr {
+    transition: background-color 0.15s ease;
   }
 
   .editable-table tbody tr:hover {
-    background-color: var(--color-subtle);
+    background-color: #fafbfd;
   }
 
-  .table-row-active {
-    background-color: rgba(59, 111, 196, 0.06);
+  .editable-table tbody tr.table-row-active {
+    background-color: var(--color-primary-soft);
+    box-shadow: inset 3px 0 0 var(--color-primary);
   }
 
   .cell-input {
     width: 100%;
     background-color: var(--color-subtle);
     border: 1px solid transparent;
-    border-radius: 4px;
+    border-radius: 8px;
     color: var(--color-text-primary);
-    padding: 6px 10px;
+    padding: 7px 10px;
     font-size: 13px;
+    line-height: 1.6;
+    font-family: inherit;
     outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+
+  .cell-input:hover {
+    border-color: var(--color-panel-border);
   }
 
   .cell-input:focus {
     background-color: #ffffff;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(59, 111, 196, 0.12);
+    box-shadow: var(--shadow-focus);
+  }
+
+  textarea.cell-input {
+    resize: vertical;
+    display: block;
   }
 
   .cell-select {
     background-color: var(--color-subtle);
     border: 1px solid transparent;
-    border-radius: 4px;
+    border-radius: 8px;
     color: var(--color-text-primary);
     padding: 6px 8px;
     outline: none;
@@ -539,16 +744,8 @@ body {
     font-size: 13px;
   }
 
-  .cell-option-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
-  }
-
-  .cell-opt-wrap {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+  .cell-select:focus {
+    border-color: var(--color-primary);
   }
 
   .cell-opt-lbl {
@@ -557,56 +754,202 @@ body {
     font-weight: bold;
   }
 
-  /* Anki 模板程式碼分頁 */
-  .tab-headers {
+  /* 文字選擇題的題目編輯區：每一題一張卡片，題目、解析在左，選項在右 */
+  .editor-toolbar {
     display: flex;
-    border-bottom: 1px solid var(--color-panel-border);
-    margin-bottom: 15px;
-    gap: 4px;
-    overflow-x: auto;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    background-color: var(--color-subtle);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 14px;
   }
 
-  .tab-btn {
-    background: transparent;
-    border: none;
-    outline: none;
-    cursor: pointer;
+  .editor-toolbar-field {
+    flex: 1 1 320px;
+    min-width: 0;
+  }
+
+  .question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .question-card {
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 14px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .question-card:hover {
+    border-color: #c8d2df;
+  }
+
+  .question-card.active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 111, 196, 0.12);
+  }
+
+  .question-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
     padding: 10px 16px;
-    color: var(--color-text-secondary);
-    font-size: 13px;
-    font-weight: 600;
-    position: relative;
-    white-space: nowrap;
+    border-bottom: 1px solid var(--color-panel-border);
+    border-radius: 13px 13px 0 0;
+    background-color: var(--color-subtle);
   }
 
-  .tab-btn:hover {
+  .question-card.active .question-card-header {
+    background-color: var(--color-primary-soft);
+  }
+
+  .question-number {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
     color: var(--color-text-primary);
+    min-width: 64px;
   }
 
-  .tab-btn.active {
+  .question-card.active .question-number {
     color: var(--color-primary);
   }
 
-  .tab-btn.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background-color: var(--color-primary);
+  .question-answer {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
   }
 
-  .tab-intro {
+  .question-card-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .question-card-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 20px 28px;
+    padding: 16px 18px 18px;
+  }
+
+  @media (max-width: 900px) {
+    .question-card-body {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .question-main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .question-main .field-label:not(:first-child) {
+    margin-top: 14px;
+  }
+
+  .question-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .option-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .option-letter {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 13px;
+    font-weight: 700;
     color: var(--color-text-secondary);
-    margin-bottom: 12px;
+    background-color: var(--color-subtle);
+    border: 1px solid var(--color-panel-border);
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .option-letter.correct {
+    color: #ffffff;
+    background-color: var(--color-success);
+    border-color: var(--color-success);
+  }
+
+  .qc-input {
+    width: 100%;
+    border: 1px solid var(--color-field-border);
+    border-radius: 9px;
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 1.65;
+    font-family: inherit;
+    background-color: var(--color-panel);
+    color: var(--color-text-primary);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .qc-input:hover {
+    border-color: #c3cddb;
+  }
+
+  .qc-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus);
+  }
+
+  textarea.qc-input {
+    display: block;
+    resize: vertical;
+  }
+
+  .option-row .option-letter {
+    margin-top: 5px;
+  }
+
+  .qc-option {
+    padding: 6px 10px;
+    resize: none !important;
+    overflow: hidden;
+  }
+
+  .qc-select {
+    width: auto;
+    padding: 5px 10px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .question-answer-input {
+    width: 96px;
+    padding: 5px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
   }
 
   .fields-list {
     background-color: var(--color-subtle);
     border: 1px solid var(--color-panel-border);
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 15px;
     display: flex;
     flex-direction: column;
@@ -620,10 +963,10 @@ body {
   }
 
   .field-item code {
-    background-color: rgba(59, 111, 196, 0.1);
-    color: #14284A;
+    background-color: var(--color-primary-soft);
+    color: var(--color-accent);
     padding: 2px 8px;
-    border-radius: 4px;
+    border-radius: 6px;
     font-weight: bold;
     margin-right: 12px;
     width: 110px;
@@ -634,38 +977,10 @@ body {
     color: var(--color-text-secondary);
   }
 
-  .code-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: var(--color-subtle);
-    padding: 8px 15px;
-    border-radius: 6px 6px 0 0;
-    border: 1px solid var(--color-panel-border);
-    border-bottom: none;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-  }
-
-  .code-area {
-    width: 100%;
-    height: 250px;
-    background-color: var(--background);
-    border: 1px solid var(--color-panel-border);
-    border-radius: 0 0 6px 6px;
-    color: #14284A;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    padding: 15px;
-    outline: none;
-    resize: vertical;
-  }
-
-  /* 圖片標記工具的兩步驟精靈頁面，沿用舊版 slides.html/slides.css 的設計 */
+  /* 圖片標記工具的兩步驟精靈頁面 */
   .wizard-single-col {
-    max-width: 900px;
-    margin: 30px auto;
+    max-width: 920px;
+    margin: 28px auto 40px;
     padding: 0 24px;
   }
 
@@ -675,25 +990,32 @@ body {
     padding: 0 24px;
   }
 
+  /* 放在單欄精靈容器裡時，外層已經有左右留白，不要再內縮一次，按鈕才會跟上方面板右緣對齊 */
+  .wizard-single-col .wizard-nav {
+    padding: 0;
+  }
+
   .slide-dropzone {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    border: 2px dashed var(--color-panel-border);
-    border-radius: 14px;
-    padding: 30px 20px;
+    border: 2px dashed #c8d2df;
+    border-radius: 16px;
+    padding: 36px 20px;
     text-align: center;
     color: var(--color-text-secondary);
     background-color: var(--color-subtle);
-    transition: all 0.2s ease;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
     margin-bottom: 15px;
   }
 
+  .slide-dropzone:hover,
   .slide-dropzone.drag-over {
     border-color: var(--color-primary);
-    background-color: rgba(59, 111, 196, 0.06);
+    background-color: var(--color-primary-soft);
   }
 
   .slide-grid {
@@ -705,11 +1027,12 @@ body {
   .slide-card {
     border: 1px solid var(--color-panel-border);
     border-radius: 14px;
-    background-color: var(--color-subtle);
+    background-color: var(--color-panel);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: all 0.2s ease;
+    box-shadow: var(--shadow-panel-sm);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   }
 
   .slide-card.slide-card-excluded {
@@ -718,13 +1041,13 @@ body {
 
   .slide-card.slide-card-active {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(59, 111, 196, 0.15);
+    box-shadow: var(--shadow-focus);
   }
 
   .slide-thumb-wrap {
     width: 100%;
     height: 130px;
-    background-color: var(--color-panel-border);
+    background-color: var(--color-subtle);
     overflow: hidden;
   }
 
@@ -744,11 +1067,11 @@ body {
 
   .field-label {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-text-secondary);
     font-weight: 600;
     margin-top: 4px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
 
   .field-label:first-child {
@@ -757,7 +1080,7 @@ body {
 
   .slide-filename-input-error {
     border-color: var(--color-danger) !important;
-    background-color: rgba(220, 38, 38, 0.08);
+    background-color: var(--color-danger-soft);
   }
 
   .slide-filename-warning {
@@ -787,24 +1110,30 @@ body {
 
   .mode-tabs {
     display: flex;
-    gap: 8px;
+    gap: 4px;
+    padding: 4px;
     margin-bottom: 18px;
-    border-bottom: 1px solid var(--color-panel-border);
+    background-color: var(--color-subtle);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 12px;
   }
 
   .mode-tab-btn {
+    flex: 1;
+    justify-content: center;
     background: transparent;
     border: none;
     outline: none;
     cursor: pointer;
-    padding: 10px 16px;
+    padding: 8px 16px;
+    border-radius: 9px;
     color: var(--color-text-secondary);
     font-size: 14px;
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 8px;
-    position: relative;
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   }
 
   .mode-tab-btn:hover {
@@ -812,24 +1141,16 @@ body {
   }
 
   .mode-tab-btn.active {
+    background-color: var(--color-panel);
     color: var(--color-primary);
-  }
-
-  .mode-tab-btn.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background-color: var(--color-primary);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.06);
   }
 
   .field-row {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
 
   .field-row label {
@@ -840,11 +1161,14 @@ body {
 
   .field-row-inline {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 10px;
   }
 
   .field-row-inline .cell-input {
-    flex-grow: 1;
+    flex: 1 1 220px;
+    width: auto;
   }
 
   .field-hint {
@@ -856,7 +1180,7 @@ body {
     width: 60px;
     height: 60px;
     object-fit: cover;
-    border-radius: 6px;
+    border-radius: 8px;
     display: block;
   }
 
@@ -889,7 +1213,7 @@ body {
     width: 64px;
     height: 64px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 10px;
     flex-shrink: 0;
     background-color: var(--color-panel-border);
   }
@@ -913,6 +1237,13 @@ body {
     gap: 10px;
   }
 
+  @media (max-width: 640px) {
+    .mcq-edit-two-col,
+    .mcq-edit-options-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .mcq-edit-opt-wrap {
     display: flex;
     align-items: center;
@@ -921,6 +1252,7 @@ body {
 
   .mcq-edit-opt-wrap .cell-input {
     flex-grow: 1;
+    background-color: var(--color-panel);
   }
 
   .compact-question-preview {
@@ -935,7 +1267,7 @@ body {
   .occlusion-image-wrap {
     position: relative;
     width: 100%;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
     background-color: var(--color-subtle);
     margin-bottom: 16px;
@@ -948,26 +1280,43 @@ body {
     display: block;
   }
 
+  /* 頁首 */
+  .brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    font-size: 18px;
+    background: linear-gradient(135deg, #3b6fc4 0%, #6366f1 100%);
+    box-shadow: 0 4px 12px rgba(59, 111, 196, 0.3);
+  }
+
   /* 頁首右側的導覽連結（回首頁、歷史紀錄） */
   .nav-link {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--color-text-primary);
+    color: var(--color-text-secondary);
     text-decoration: none;
     font-weight: 600;
     font-size: 13px;
     padding: 6px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--color-panel-border);
+    border-radius: 9px;
+    border: 1px solid transparent;
     white-space: nowrap;
-    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 
   .nav-link:hover {
     background-color: var(--color-subtle);
-    border-color: #cbd5e1;
-    transform: translateY(-1px);
+    color: var(--color-text-primary);
+  }
+
+  .nav-link.active {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
   }
 
   /* 頁首右上角顯示已連結的 Google Drive 帳號 */
@@ -978,7 +1327,7 @@ body {
     font-size: 12px;
     color: var(--color-text-secondary);
     padding: 6px 10px;
-    border-radius: 8px;
+    border-radius: 9px;
     background-color: var(--color-subtle);
     border: 1px solid var(--color-panel-border);
     white-space: nowrap;
@@ -987,7 +1336,7 @@ body {
   }
 
   .drive-status-badge:hover:not(:disabled) {
-    background-color: rgba(220, 38, 38, 0.08);
+    background-color: var(--color-danger-soft);
     border-color: rgba(220, 38, 38, 0.35);
     color: var(--color-danger);
   }
@@ -1017,15 +1366,10 @@ body {
     background-color: var(--color-panel);
     border: 1px solid var(--color-panel-border);
     box-shadow: var(--shadow-panel-sm);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 16px 20px;
     font-size: 13px;
     color: var(--color-text-secondary);
-    transition: box-shadow 0.2s ease;
-  }
-
-  .drive-connect-banner:hover {
-    box-shadow: var(--shadow-panel-md);
   }
 
   .drive-connect-banner-actions {
@@ -1051,13 +1395,13 @@ body {
     justify-content: center;
     font-size: 26px;
     text-decoration: none;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15), 0 2px 6px rgba(15, 23, 42, 0.1);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.08);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   .drawer-fab:hover {
     transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.18), 0 3px 8px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.16), 0 3px 8px rgba(15, 23, 42, 0.1);
   }
 
   .drawer-fab-badge {
@@ -1085,8 +1429,8 @@ body {
     bottom: 20px;
     left: 20px;
     z-index: 50;
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     border: 1px solid var(--color-panel-border);
     cursor: pointer;
@@ -1095,29 +1439,29 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 26px;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15), 0 2px 6px rgba(15, 23, 42, 0.1);
+    font-size: 22px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.08);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   .help-guide-fab:hover {
     transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.18), 0 3px 8px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.16), 0 3px 8px rgba(15, 23, 42, 0.1);
   }
 
   .help-guide-panel {
     position: fixed;
-    bottom: 90px;
+    bottom: 80px;
     left: 20px;
     z-index: 50;
-    width: min(340px, calc(100vw - 40px));
+    width: min(360px, calc(100vw - 40px));
     max-height: min(60vh, 480px);
     overflow-y: auto;
-    padding: 16px;
-    border-radius: 14px;
+    padding: 18px;
+    border-radius: 16px;
     background-color: var(--color-panel);
     border: 1px solid var(--color-panel-border);
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
   }
 
   /* 歷史紀錄頁面：左側列表項目 */
@@ -1127,19 +1471,19 @@ body {
     text-align: left;
     background-color: var(--color-panel);
     border: 1px solid var(--color-panel-border);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 10px 14px;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
   .history-list-item:hover {
-    background-color: var(--color-subtle);
-    border-color: #cbd5e1;
+    border-color: #c8d2df;
+    box-shadow: var(--shadow-panel-sm);
   }
 
   .history-list-item-active {
-    background-color: rgba(59, 111, 196, 0.06);
+    background-color: var(--color-primary-soft);
     border-color: var(--color-primary);
   }
 
@@ -1148,12 +1492,12 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    background-color: var(--color-accent-light);
-    border: 1px solid rgba(20, 40, 74, 0.25);
-    border-radius: 8px;
+    background-color: var(--color-primary-soft);
+    border: 1px solid rgba(59, 111, 196, 0.25);
+    border-radius: 12px;
     padding: 12px 14px;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--color-text-secondary);
-    line-height: 1.6;
+    line-height: 1.65;
   }
 }

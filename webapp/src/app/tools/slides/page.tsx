@@ -26,8 +26,8 @@ import {
 import SlideCard from './slide-card'
 import McqEditPanel from './mcq-edit-panel'
 import SlidesSimulator from './slides-simulator'
-import AnkiConnectSetupPanel from '../mcq/anki-connect-setup-panel'
 import SaveToAnkiButton from '@/components/save-to-anki-button'
+import AnkiOpenHint from '@/components/anki-open-hint'
 
 const DISTRACTOR_TARGET_FIELDS = ['optionB', 'optionC', 'optionD'] as const
 const DEFAULT_PROMPT = '這張圖片顯示的是什麼？'
@@ -621,7 +621,10 @@ export default function SlidesWizardPage() {
         <div className="wizard-single-col">
           <div className="card-panel">
             <div className="panel-header">
-              <h2>🖼️ 1. 選取圖片</h2>
+              <h2>
+                <span className="step-badge">1</span>
+                選取圖片
+              </h2>
               <button onClick={clearAllSlides} className="btn btn-danger-outline btn-sm">
                 🗑️ 全部清除
               </button>
@@ -673,7 +676,11 @@ export default function SlidesWizardPage() {
           {images.length > 0 && (
             <div className="card-panel mt-4">
               <div className="panel-header">
-                <h2>🏷️ 2. 重新命名檔案與選取（{images.length} 張）</h2>
+                <h2>
+                  <span className="step-badge">2</span>
+                  重新命名檔案與選取
+                  <span className="count-pill">{images.length} 張</span>
+                </h2>
                 <div className="row-actions">
                   <button onClick={() => setAllIncluded(true)} className="btn btn-secondary btn-sm">
                     全選
@@ -734,7 +741,10 @@ export default function SlidesWizardPage() {
             <section className="panel-left">
               <div className="card-panel">
                 <div className="panel-header">
-                  <h2>📤 3. 匯出模式</h2>
+                  <h2>
+                    <span className="step-badge">3</span>
+                    匯出模式
+                  </h2>
                 </div>
                 <div className="panel-body">
                   <div className="mode-tabs">
@@ -933,6 +943,7 @@ export default function SlidesWizardPage() {
                           />
                         </div>
                       </div>
+                      <AnkiOpenHint className="mt-3" />
                       {userReady && !user && (
                         <p className="mt-2 text-xs text-text-secondary">
                           🔒 登入後可以把這份卡組存入歷史紀錄。{' '}
@@ -1022,6 +1033,7 @@ export default function SlidesWizardPage() {
                           />
                         </div>
                       </div>
+                      <AnkiOpenHint className="mt-3" />
                       {userReady && !user && (
                         <p className="mt-2 text-xs text-text-secondary">
                           🔒 登入後可以把這份卡組存入歷史紀錄。{' '}
@@ -1049,11 +1061,7 @@ export default function SlidesWizardPage() {
             <section className="panel-right">
               <SlidesSimulator key={`${effectiveActiveId}-${mode}`} mode={mode} card={simulatorCard} />
 
-              {mode === 'mcq' ? (
-                <div className="mt-4">
-                  <AnkiConnectSetupPanel />
-                </div>
-              ) : (
+              {mode === 'occlusion' && (
                 <div className="card-panel mt-4">
                   <div className="panel-header">
                     <h2>ℹ️ 匯入設定提醒</h2>

@@ -12,8 +12,9 @@ import { decodeText } from '@/lib/text-obfuscation'
 import type { McqCard } from '@/lib/history-types'
 import { addCardsToAnki, ensureAnkiGenModelExists, ensureDeckExists, type AnkiCardInput } from '@/lib/anki-connect'
 import SaveToAnkiButton from '@/components/save-to-anki-button'
+import AnkiOpenHint from '@/components/anki-open-hint'
+import AutoGrowTextarea from '@/components/auto-grow-textarea'
 import AnkiSimulator from './anki-simulator'
-import AnkiConnectSetupPanel from './anki-connect-setup-panel'
 
 interface CardState extends McqCard {
   localId: string
@@ -137,6 +138,7 @@ export default function McqToolPage() {
   const lastSavedSignatureRef = useRef<string | null>(null)
   const hasLoadedFromDrawerRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const simulatorRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     // localStorage 只在瀏覽器端讀得到，故意等 mount 後才讀，讓使用者用過一次的
@@ -266,6 +268,12 @@ export default function McqToolPage() {
     setPreviewIndex((prev) => Math.min(prev, cards.length - 2))
   }
 
+  // 編輯區在模擬器下方，按「預覽」時把畫面捲回模擬器，不用自己往上找。
+  function showPreview(index: number) {
+    setPreviewIndex(index)
+    simulatorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   function handleLoadSample() {
     setInputMethod('text')
     setSourceText(SAMPLE_MARKDOWN)
@@ -348,158 +356,160 @@ export default function McqToolPage() {
 
   return (
     <main className="app-container">
-      {/* 左欄：輸入與編輯區 */}
-      <section className="flex flex-col gap-6">
-        <div className="card-panel">
-          <div className="panel-header">
-            <h2>📥 1. 輸入文字內容</h2>
-            <div className="row-actions">
-              <button onClick={handleLoadSample} className="btn btn-secondary btn-sm">
-                💡 載入範例
-              </button>
-              <button onClick={handleClear} className="btn btn-danger-outline btn-sm">
-                🗑️ 清除
-              </button>
-            </div>
+      {/* 上排左：輸入區 */}
+      <section className="card-panel">
+        <div className="panel-header">
+          <h2>
+            <span className="step-badge">1</span>
+            輸入文字內容
+          </h2>
+          <div className="row-actions">
+            <button onClick={handleLoadSample} className="btn btn-secondary btn-sm">
+              💡 載入範例
+            </button>
+            <button onClick={handleClear} className="btn btn-danger-outline btn-sm">
+              🗑️ 清除
+            </button>
           </div>
-          <div className="panel-body">
-            <p className="instruction-text">
-              {inputMethod === 'file'
-                ? '上傳你的 PDF 或拍照圖片，AI 會直接讀取檔案內容，自動解析題號、題目、選項、正確答案與解析。'
-                : '貼上你的文字內容（例如考卷、筆記），系統會用 AI 自動解析題號、題目、選項、正確答案與解析。'}
+        </div>
+        <div className="panel-body">
+          <p className="instruction-text">
+            {inputMethod === 'file'
+              ? '上傳你的 PDF 或拍照圖片，AI 會直接讀取檔案內容，自動解析題號、題目、選項、正確答案與解析。'
+              : '貼上你的文字內容（例如考卷、筆記），系統會用 AI 自動解析題號、題目、選項、正確答案與解析。'}
+          </p>
+
+          <div className="api-key-wrapper">
+            <span>🔑</span>
+            <input
+              type="password"
+              placeholder="輸入您的 Gemini API Key"
+              value={apiKey}
+              onChange={(e) => {
+                setApiKey(e.target.value)
+                saveGeminiApiKey(e.target.value.trim())
+              }}
+              className="api-key-input"
+            />
+            <span className="api-key-divider">|</span>
+            <span>🤖</span>
+            <select
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              className="model-select"
+            >
+              <option value="gemini-3.6-flash">gemini-3.6-flash（推薦）</option>
+              <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+              <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite（極速）</option>
+              <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview（深度解析）</option>
+            </select>
+            <a
+              href="https://aistudio.google.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="whitespace-nowrap text-xs font-semibold text-accent"
+            >
+              ❓ 獲取 Key
+            </a>
+          </div>
+
+          <details className="hint-collapsible mb-4">
+            <summary>免費 API Key 的使用建議</summary>
+            <p className="instruction-text mt-2 mb-0">
+              如果你的 API Key 是免費申請的，建議選用 <strong>gemini-3.1-flash-lite</strong>
+              （額度限制較寬鬆）；但 lite 版本能處理的資料量較小，單次貼上的內容不要太多，以免生成失敗或跑不出結果，建議分批處理。
             </p>
+          </details>
 
-            <div className="api-key-wrapper">
-              <span>🔑</span>
+          <div className="input-method-tabs">
+            <button
+              type="button"
+              onClick={() => setInputMethod('text')}
+              className={`input-method-tab${inputMethod === 'text' ? ' active' : ''}`}
+            >
+              📝 貼上文字
+            </button>
+            <button
+              type="button"
+              onClick={() => setInputMethod('file')}
+              className={`input-method-tab${inputMethod === 'file' ? ' active' : ''}`}
+            >
+              📎 上傳 PDF / 照片
+            </button>
+          </div>
+
+          {inputMethod === 'file' ? (
+            <>
               <input
-                type="password"
-                placeholder="輸入您的 Gemini API Key"
-                value={apiKey}
+                ref={fileInputRef}
+                type="file"
+                accept={
+                  uploadedCategory === 'pdf'
+                    ? 'application/pdf'
+                    : uploadedCategory === 'image'
+                      ? 'image/*'
+                      : 'application/pdf,image/*'
+                }
+                multiple
+                hidden
                 onChange={(e) => {
-                  setApiKey(e.target.value)
-                  saveGeminiApiKey(e.target.value.trim())
+                  void handleFilesSelected(e.target.files)
+                  e.target.value = '' // 清空，允許重複選取同一檔案
                 }}
-                className="api-key-input"
               />
-              <span className="api-key-divider">|</span>
-              <span>🤖</span>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                className="model-select"
+              <div
+                className={`file-upload-wrapper${isDragOver ? ' dragover' : ''}`}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setIsDragOver(true)
+                }}
+                onDragEnter={(e) => {
+                  e.preventDefault()
+                  setIsDragOver(true)
+                }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDragEnd={() => setIsDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  setIsDragOver(false)
+                  void handleFilesSelected(e.dataTransfer.files)
+                }}
               >
-                <option value="gemini-3.6-flash">gemini-3.6-flash（推薦）</option>
-                <option value="gemini-3.5-flash">gemini-3.5-flash</option>
-                <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite（極速）</option>
-                <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview（深度解析）</option>
-              </select>
-              <a
-                href="https://aistudio.google.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="whitespace-nowrap text-xs font-semibold text-accent"
-              >
-                ❓ 獲取 Key
-              </a>
-            </div>
-
-            <details className="hint-collapsible mb-4">
-              <summary>免費 API Key 的使用建議</summary>
-              <p className="instruction-text mt-2 mb-0">
-                如果你的 API Key 是免費申請的，建議選用 <strong>gemini-3.1-flash-lite</strong>
-                （額度限制較寬鬆）；但 lite 版本能處理的資料量較小，單次貼上的內容不要太多，以免生成失敗或跑不出結果，建議分批處理。
-              </p>
-            </details>
-
-            <div className="input-method-tabs">
-              <button
-                type="button"
-                onClick={() => setInputMethod('text')}
-                className={`input-method-tab${inputMethod === 'text' ? ' active' : ''}`}
-              >
-                📝 貼上文字
-              </button>
-              <button
-                type="button"
-                onClick={() => setInputMethod('file')}
-                className={`input-method-tab${inputMethod === 'file' ? ' active' : ''}`}
-              >
-                📎 上傳 PDF / 照片
-              </button>
-            </div>
-
-            {inputMethod === 'file' ? (
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={
-                    uploadedCategory === 'pdf'
-                      ? 'application/pdf'
-                      : uploadedCategory === 'image'
-                        ? 'image/*'
-                        : 'application/pdf,image/*'
-                  }
-                  multiple
-                  hidden
-                  onChange={(e) => {
-                    void handleFilesSelected(e.target.files)
-                    e.target.value = '' // 清空，允許重複選取同一檔案
-                  }}
-                />
-                <div
-                  className={`file-upload-wrapper${isDragOver ? ' dragover' : ''}`}
-                  onDragOver={(e) => {
-                    e.preventDefault()
-                    setIsDragOver(true)
-                  }}
-                  onDragEnter={(e) => {
-                    e.preventDefault()
-                    setIsDragOver(true)
-                  }}
-                  onDragLeave={() => setIsDragOver(false)}
-                  onDragEnd={() => setIsDragOver(false)}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    setIsDragOver(false)
-                    void handleFilesSelected(e.dataTransfer.files)
-                  }}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="btn btn-secondary btn-sm"
                 >
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    📎 選擇檔案
-                  </button>
-                  <span className="file-upload-hint">
-                    可多選或拖放；同一次只能上傳 PDF 或照片其中一種，AI 會直接讀取檔案內容，不需先轉成文字
-                  </span>
-                  {uploadedFiles.length > 0 && (
-                    <div className="file-upload-list">
-                      {uploadedFiles.map((f) => (
-                        <div key={f.localId} className="file-chip">
-                          <span>{f.mimeType === 'application/pdf' ? '📄' : '🖼️'}</span>
-                          <span className="file-chip-name" title={f.name}>
-                            {f.name}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => removeUploadedFile(f.localId)}
-                            className="file-chip-remove"
-                            title="移除此檔案"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <textarea
-                placeholder="貼上文字內容，例如：
+                  📎 選擇檔案
+                </button>
+                <span className="file-upload-hint">
+                  可多選或拖放；同一次只能上傳 PDF 或照片其中一種，AI 會直接讀取檔案內容，不需先轉成文字
+                </span>
+                {uploadedFiles.length > 0 && (
+                  <div className="file-upload-list">
+                    {uploadedFiles.map((f) => (
+                      <div key={f.localId} className="file-chip">
+                        <span>{f.mimeType === 'application/pdf' ? '📄' : '🖼️'}</span>
+                        <span className="file-chip-name" title={f.name}>
+                          {f.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeUploadedFile(f.localId)}
+                          className="file-chip-remove"
+                          title="移除此檔案"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <textarea
+              placeholder="貼上文字內容，例如：
 1. 關於二尖瓣狹窄的敘述，下列何者錯誤？
 A. 最常見的原因是風濕熱
 B. 心尖處可聽到舒張期心雜音
@@ -507,53 +517,72 @@ C. 常合併心房顫動
 D. 第一心音會變弱
 答案：D
 解析：二尖瓣狹窄時，第一心音通常會變強（Loud S1）..."
-                value={sourceText}
-                onChange={(e) => setSourceText(e.target.value)}
-                rows={10}
-                className="field-input mb-4 font-mono"
-              />
+              value={sourceText}
+              onChange={(e) => setSourceText(e.target.value)}
+              rows={10}
+              className="field-input mb-4 font-mono"
+            />
+          )}
+
+          <button onClick={handleParse} disabled={parsing} className="btn btn-primary btn-lg w-full">
+            {parsing ? '✨ 解析中...' : '✨ AI 智慧解析'}
+          </button>
+        </div>
+      </section>
+
+      {/* 上排右：卡片預覽。按下題目卡片上的「預覽」會捲回這裡。 */}
+      <section ref={simulatorRef} className="simulator-slot">
+        <AnkiSimulator key={previewCard === SAMPLE_PREVIEW_CARD ? 'sample' : previewIndex} card={previewCard} />
+      </section>
+
+      {message && (
+        <p className={`status-message col-span-full ${message.type === 'ok' ? 'status-ok' : 'status-error'}`}>
+          {message.text}
+        </p>
+      )}
+
+      {/* 下排：題目編輯區佔滿整列寬度，題目、選項、解析都有足夠空間閱讀與修改 */}
+      {cards.length > 0 && (
+        <section className="card-panel col-span-full">
+          <div className="panel-header">
+            <h2>
+              <span className="step-badge">2</span>
+              預覽與修改解析結果
+              <span className="count-pill">{cards.length} 題</span>
+            </h2>
+          </div>
+          <div className="panel-body">
+            {fromDrawer && (
+              <div className="notice-box mb-4">
+                <div>
+                  已經從抽屜載入 {cards.length} 張卡片。如果想幫這份卡組再補充新的題目，可以貼上文字內容重新解析，新解析出來的卡片會加進下面的列表一起處理。
+                </div>
+              </div>
             )}
 
-            <button onClick={handleParse} disabled={parsing} className="btn btn-primary w-full">
-              {parsing ? '✨ 解析中...' : '✨ AI 智慧解析'}
-            </button>
-          </div>
-        </div>
-
-        {cards.length > 0 && (
-          <div className="card-panel">
-            <div className="panel-header">
-              <h2>
-                ✅ 2. 預覽與修改解析結果 ({cards.length} 題)
-              </h2>
-            </div>
-            <div className="panel-body">
-              {fromDrawer && (
-                <div className="notice-box mb-3">
-                  <div>
-                    已經從抽屜載入 {cards.length} 張卡片。如果想幫這份卡組再補充新的題目，可以貼上文字內容重新解析，新解析出來的卡片會加進下面的列表一起處理。
-                  </div>
-                </div>
-              )}
-              <label className="field-label">
-                🏷️ 這批卡片的用途標籤
-              </label>
-              <input
-                placeholder="方便日後在歷史紀錄搜尋，也是存入 Anki 時的牌組名稱"
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-                className="field-input mb-3"
-              />
-              <div className="row-actions mb-3">
+            <div className="editor-toolbar">
+              <div className="editor-toolbar-field">
+                <label className="field-label" htmlFor="mcq-purpose">
+                  🏷️ 這批卡片的用途標籤
+                </label>
+                <input
+                  id="mcq-purpose"
+                  placeholder="方便日後在歷史紀錄搜尋，也是存入 Anki 時的牌組名稱"
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                  className="field-input"
+                />
+              </div>
+              <div className="row-actions">
                 <button
                   onClick={handleSave}
                   disabled={saving || (userReady && !user)}
                   title={userReady && !user ? '登入後才能存入歷史紀錄' : undefined}
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary"
                 >
                   {saving ? '存入中...' : userReady && !user ? '🔒 存入紀錄' : '🔖 存入紀錄'}
                 </button>
-                <button onClick={handleDownloadCsv} className="btn btn-success btn-sm">
+                <button onClick={handleDownloadCsv} className="btn btn-success">
                   📄 匯出 CSV
                 </button>
                 <SaveToAnkiButton
@@ -563,124 +592,131 @@ D. 第一心音會變弱
                     await addCardsToAnki(deckName, ankiCards)
                   }}
                   defaultDeckName={purpose || 'AnkiGen Hub'}
+                  size="md"
                   onTrigger={() => void ensureSavedToHistory()}
                 />
               </div>
-              {userReady && !user && (
-                <p className="mb-3 text-xs text-text-secondary">
-                  🔒 登入後可以把這份卡組存入歷史紀錄。{' '}
-                  <Link href="/login" className="font-semibold text-accent">
-                    前往登入
-                  </Link>
-                </p>
-              )}
-              <div className="table-container">
-                <table className="editable-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '5%' }}>題號</th>
-                      <th style={{ width: '32%' }}>題目</th>
-                      <th style={{ width: '10%' }}>類型</th>
-                      <th style={{ width: '33%' }}>選項 (A-F)</th>
-                      <th style={{ width: '8%' }}>答案</th>
-                      <th style={{ width: '12%' }}>操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cards.map((card, index) => (
-                      <tr
-                        key={card.localId}
-                        className={index === previewIndex ? 'table-row-active' : ''}
-                        onClick={(e) => {
-                          const tag = (e.target as HTMLElement).tagName
-                          if (['INPUT', 'SELECT', 'BUTTON', 'TEXTAREA'].includes(tag)) return
-                          setPreviewIndex(index)
-                        }}
+            </div>
+            <AnkiOpenHint className="mb-2" />
+            {userReady && !user && (
+              <p className="mb-2 text-xs text-text-secondary">
+                🔒 登入後可以把這份卡組存入歷史紀錄。{' '}
+                <Link href="/login" className="font-semibold text-accent">
+                  前往登入
+                </Link>
+              </p>
+            )}
+
+            <div className="question-list">
+              {cards.map((card, index) => {
+                const correctLetters = String(card.answer ?? '').toUpperCase().replace(/[^A-F]/g, '')
+                return (
+                  <article
+                    key={card.localId}
+                    className={`question-card${index === previewIndex ? ' active' : ''}`}
+                    // 正在編輯哪一題，右上角的模擬器就跟著切到哪一題
+                    onFocusCapture={() => setPreviewIndex(index)}
+                    onClick={(e) => {
+                      const tag = (e.target as HTMLElement).tagName
+                      if (['INPUT', 'SELECT', 'BUTTON', 'TEXTAREA'].includes(tag)) return
+                      setPreviewIndex(index)
+                    }}
+                  >
+                    <header className="question-card-header">
+                      <span className="question-number">第 {index + 1} 題</span>
+                      <select
+                        className="qc-input qc-select"
+                        value={card.isMultiple ? 'y' : ''}
+                        onChange={(e) => updateCard(card.localId, { isMultiple: e.target.value === 'y' })}
+                        aria-label="題目類型"
                       >
-                        <td>{index + 1}</td>
-                        <td>
-                          <textarea
-                            className="cell-input"
-                            rows={5}
-                            value={card.questionText}
-                            onChange={(e) =>
-                              updateCard(card.localId, { questionText: e.target.value })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <select
-                            className="cell-select"
-                            value={card.isMultiple ? 'y' : ''}
-                            onChange={(e) =>
-                              updateCard(card.localId, { isMultiple: e.target.value === 'y' })
-                            }
-                          >
-                            <option value="">單選題</option>
-                            <option value="y">多選題</option>
-                          </select>
-                        </td>
-                        <td>
-                          <div className="cell-option-grid">
-                            {OPTION_KEYS.map((key, i) => (
-                              <div key={key} className="cell-opt-wrap">
-                                <span className="cell-opt-lbl">{String.fromCharCode(65 + i)}</span>
-                                <input
-                                  className="cell-input"
-                                  value={card[key]}
-                                  onChange={(e) => updateCard(card.localId, { [key]: e.target.value })}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                        <td>
-                          <input
-                            className="cell-input text-center"
-                            placeholder="A, C"
-                            value={card.answer}
-                            onChange={(e) => updateCard(card.localId, { answer: e.target.value })}
-                          />
-                        </td>
-                        <td>
-                          <div className="row-actions">
-                            <button
-                              onClick={() => setPreviewIndex(index)}
-                              className="btn btn-secondary btn-xs"
-                              title="即時模擬預覽"
-                            >
-                              🔍
-                            </button>
-                            <button
-                              onClick={() => removeCard(index)}
-                              className="btn btn-danger-outline btn-xs"
-                              title="刪除本題"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        <option value="">單選題</option>
+                        <option value="y">多選題</option>
+                      </select>
+                      <label className="question-answer">
+                        答案
+                        <input
+                          className="qc-input question-answer-input"
+                          placeholder="A, C"
+                          value={card.answer}
+                          onChange={(e) => updateCard(card.localId, { answer: e.target.value })}
+                        />
+                      </label>
+                      <div className="question-card-actions">
+                        <button
+                          onClick={() => showPreview(index)}
+                          className="btn btn-secondary btn-xs"
+                          title="在模擬器中預覽這一題"
+                        >
+                          🔍 預覽
+                        </button>
+                        <button
+                          onClick={() => removeCard(index)}
+                          className="btn btn-danger-outline btn-xs"
+                          title="刪除本題"
+                        >
+                          🗑️ 刪除
+                        </button>
+                      </div>
+                    </header>
+
+                    <div className="question-card-body">
+                      <div className="question-main">
+                        <label className="field-label" htmlFor={`${card.localId}-question`}>
+                          題目
+                        </label>
+                        <AutoGrowTextarea
+                          id={`${card.localId}-question`}
+                          className="qc-input"
+                          rows={3}
+                          value={card.questionText}
+                          onChange={(e) => updateCard(card.localId, { questionText: e.target.value })}
+                        />
+                        <label className="field-label" htmlFor={`${card.localId}-notes`}>
+                          解析（選填）
+                        </label>
+                        <AutoGrowTextarea
+                          id={`${card.localId}-notes`}
+                          className="qc-input"
+                          rows={3}
+                          value={card.notes}
+                          onChange={(e) => updateCard(card.localId, { notes: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="question-options">
+                        <span className="field-label">選項（綠色字母為正確答案）</span>
+                        {OPTION_KEYS.map((key, i) => {
+                          const letter = String.fromCharCode(65 + i)
+                          return (
+                            <div key={key} className="option-row">
+                              <span className={`option-letter${correctLetters.includes(letter) ? ' correct' : ''}`}>
+                                {letter}
+                              </span>
+                              {/* 選項太長時自動換行顯示完整內容；選項本身不該有換行，所以擋掉 Enter */}
+                              <AutoGrowTextarea
+                                className="qc-input qc-option"
+                                rows={1}
+                                placeholder={i >= 4 ? '（選填）' : undefined}
+                                aria-label={`選項 ${letter}`}
+                                value={card[key]}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') e.preventDefault()
+                                }}
+                                onChange={(e) => updateCard(card.localId, { [key]: e.target.value })}
+                              />
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </article>
+                )
+              })}
             </div>
           </div>
-        )}
-
-        {message && (
-          <p className={`text-sm ${message.type === 'ok' ? 'text-success' : 'text-danger'}`}>
-            {message.text}
-          </p>
-        )}
-      </section>
-
-      {/* 右欄：卡片預覽與 Anki 模板設定 */}
-      <section className="flex flex-col gap-6">
-        <AnkiSimulator key={previewCard === SAMPLE_PREVIEW_CARD ? 'sample' : previewIndex} card={previewCard} />
-        <AnkiConnectSetupPanel />
-      </section>
+        </section>
+      )}
 
       {/* 讓模擬器能比照 Anki 內部渲染數學公式，而不是顯示未渲染的原始語法。
           beforeInteractive 只能放在根 layout，這裡改用 afterInteractive——

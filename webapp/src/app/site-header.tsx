@@ -81,19 +81,21 @@ export default function SiteHeader() {
   const isLogin = pathname === '/login' || pathname === '/signup'
 
   return (
-    <header className="sticky top-0 z-50 border-b border-panel-border bg-white/85 py-3 backdrop-blur-md">
-      <div className="relative flex w-full items-center justify-between gap-4 px-6 sm:px-10">
+    <header className="sticky top-0 z-50 border-b border-panel-border/80 bg-white/80 py-3 backdrop-blur-md">
+      <div className="relative flex w-full items-center justify-between gap-4 px-4 sm:px-8">
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-3 font-display text-2xl font-extrabold tracking-tight text-text-primary"
+          className="flex shrink-0 items-center gap-2.5 font-display text-xl font-extrabold tracking-tight text-text-primary"
         >
-          <span className="text-primary">💡</span>
+          <span className="brand-mark" aria-hidden>
+            💡
+          </span>
           <span>
             AnkiGen <span className="text-primary">Hub</span>
           </span>
         </Link>
 
-        <span className="absolute left-1/2 hidden -translate-x-1/2 truncate text-sm italic text-text-secondary xl:inline">
+        <span className="absolute left-1/2 hidden -translate-x-1/2 truncate text-sm text-text-secondary xl:inline">
           The central hub for instant Anki creation
         </span>
 
@@ -116,7 +118,7 @@ export default function SiteHeader() {
                   🏠 回首頁
                 </Link>
               )}
-              <Link href="/history" className="nav-link">
+              <Link href="/history" className={`nav-link${pathname.startsWith('/history') ? ' active' : ''}`}>
                 🕘 歷史紀錄
               </Link>
               <button

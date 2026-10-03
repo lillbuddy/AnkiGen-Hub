@@ -16,7 +16,7 @@ import {
   type AnkiClozeCardInput,
 } from '@/lib/anki-connect'
 import SaveToAnkiButton from '@/components/save-to-anki-button'
-import AnkiConnectSetupPanel from '../mcq/anki-connect-setup-panel'
+import AnkiOpenHint from '@/components/anki-open-hint'
 import ClozeSimulator from './cloze-simulator'
 
 // 使用者還沒生成任何卡片時，模擬器先顯示一張範例卡片，讓人一眼看懂這個功能在做什麼。
@@ -187,11 +187,14 @@ export default function ClozeToolPage() {
 
   return (
     <main className="app-container">
-      {/* 左欄：輸入與編輯區 */}
-      <section className="flex flex-col gap-6">
-        <div className="card-panel">
+      {/* 上排左：輸入區 */}
+      <section className="flex flex-col">
+        <div className="card-panel flex-1">
           <div className="panel-header">
-            <h2>📝 1. 輸入要背的單字</h2>
+            <h2>
+              <span className="step-badge">1</span>
+              輸入要背的單字
+            </h2>
             <div className="row-actions">
               <button onClick={handleLoadSample} className="btn btn-secondary btn-sm">
                 💡 載入範例
@@ -251,35 +254,61 @@ export default function ClozeToolPage() {
               className="field-input mb-4 font-mono"
             />
 
-            <button onClick={handleGenerate} disabled={parsing} className="btn btn-primary w-full">
+            <button onClick={handleGenerate} disabled={parsing} className="btn btn-primary btn-lg w-full">
               {parsing ? '✨ 生成中...' : '✨ AI 生成例句卡片'}
             </button>
           </div>
         </div>
+      </section>
 
-        {cards.length > 0 && (
-          <div className="card-panel">
-            <div className="panel-header">
-              <h2>✅ 2. 預覽與修改例句卡片 ({cards.length} 張)</h2>
-            </div>
-            <div className="panel-body">
-              <label className="field-label">🏷️ 這批卡片的用途標籤</label>
-              <input
-                placeholder="方便日後在歷史紀錄搜尋，也是存入 Anki 時的牌組名稱"
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-                className="field-input mb-3"
-              />
-              <div className="row-actions mb-3">
+      {/* 上排右：卡片預覽 */}
+      <section className="simulator-slot">
+        <ClozeSimulator
+          key={previewCard === SAMPLE_PREVIEW_CARD ? 'sample' : previewIndex}
+          card={previewCard}
+        />
+      </section>
+
+      {message && (
+        <p className={`status-message col-span-full ${message.type === 'ok' ? 'status-ok' : 'status-error'}`}>
+          {message.text}
+        </p>
+      )}
+
+      {/* 下排：編輯區佔滿整列寬度，例句與備註都有足夠空間閱讀與修改 */}
+      {cards.length > 0 && (
+        <div className="card-panel col-span-full">
+          <div className="panel-header">
+            <h2>
+              <span className="step-badge">2</span>
+              預覽與修改例句卡片
+              <span className="count-pill">{cards.length} 張</span>
+            </h2>
+          </div>
+          <div className="panel-body">
+            <div className="editor-toolbar">
+              <div className="editor-toolbar-field">
+                <label className="field-label" htmlFor="cloze-purpose">
+                  🏷️ 這批卡片的用途標籤
+                </label>
+                <input
+                  id="cloze-purpose"
+                  placeholder="方便日後在歷史紀錄搜尋，也是存入 Anki 時的牌組名稱"
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                  className="field-input"
+                />
+              </div>
+              <div className="row-actions">
                 <button
                   onClick={handleSave}
                   disabled={saving || (userReady && !user)}
                   title={userReady && !user ? '登入後才能存入歷史紀錄' : undefined}
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary"
                 >
                   {saving ? '存入中...' : userReady && !user ? '🔒 存入紀錄' : '🔖 存入紀錄'}
                 </button>
-                <button onClick={handleDownloadCsv} className="btn btn-success btn-sm">
+                <button onClick={handleDownloadCsv} className="btn btn-success">
                   📄 匯出 CSV
                 </button>
                 <SaveToAnkiButton
@@ -289,105 +318,93 @@ export default function ClozeToolPage() {
                     await addClozeCardsToAnki(deckName, ankiCards)
                   }}
                   defaultDeckName={purpose || 'AnkiGen Hub'}
+                  size="md"
                   onTrigger={() => void ensureSavedToHistory()}
                 />
               </div>
-              {userReady && !user && (
-                <p className="mb-3 text-xs text-text-secondary">
-                  🔒 登入後可以把這份卡組存入歷史紀錄。{' '}
-                  <Link href="/login" className="font-semibold text-accent">
-                    前往登入
-                  </Link>
-                </p>
-              )}
-              <p className="instruction-text mb-2">
-                「例句」裡用 <code>**</code> 包住的文字（例如 <code>**word**</code>）代表會被挖空的部分，這是我們自己的標記語法（不是 Markdown 粗體），可以直接編輯調整要挖空哪一段。
+            </div>
+            <AnkiOpenHint className="mb-2" />
+            {userReady && !user && (
+              <p className="mb-2 text-xs text-text-secondary">
+                🔒 登入後可以把這份卡組存入歷史紀錄。{' '}
+                <Link href="/login" className="font-semibold text-accent">
+                  前往登入
+                </Link>
               </p>
-              <div className="table-container">
-                <table className="editable-table">
-                  <thead>
-                    <tr>
-                      <th>單字</th>
-                      <th>例句（用 ** 包住要挖空的部分）</th>
-                      <th>備註</th>
-                      <th>操作</th>
+            )}
+            <p className="instruction-text mt-4 mb-2">
+              「例句」裡用 <code>**</code> 包住的文字（例如 <code>**word**</code>）代表會被挖空的部分，這是我們自己的標記語法（不是 Markdown 粗體），可以直接編輯調整要挖空哪一段。
+            </p>
+            <div className="table-container">
+              <table className="editable-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '16%' }}>單字</th>
+                    <th style={{ width: '50%' }}>例句（用 ** 包住要挖空的部分）</th>
+                    <th style={{ width: '26%' }}>備註</th>
+                    <th style={{ width: '8%' }}>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cards.map((card, index) => (
+                    <tr
+                      key={card.localId}
+                      className={index === previewIndex ? 'table-row-active' : ''}
+                      onClick={(e) => {
+                        const tag = (e.target as HTMLElement).tagName
+                        if (['INPUT', 'SELECT', 'BUTTON', 'TEXTAREA'].includes(tag)) return
+                        setPreviewIndex(index)
+                      }}
+                    >
+                      <td>
+                        <input
+                          className="cell-input"
+                          value={card.word}
+                          onChange={(e) => updateCard(card.localId, { word: e.target.value })}
+                        />
+                      </td>
+                      <td>
+                        <textarea
+                          className="cell-input"
+                          rows={3}
+                          value={card.sentence}
+                          onChange={(e) => updateCard(card.localId, { sentence: e.target.value })}
+                        />
+                      </td>
+                      <td>
+                        <textarea
+                          className="cell-input"
+                          rows={3}
+                          value={card.notes}
+                          onChange={(e) => updateCard(card.localId, { notes: e.target.value })}
+                        />
+                      </td>
+                      <td>
+                        <div className="row-actions">
+                          <button
+                            onClick={() => setPreviewIndex(index)}
+                            className="btn btn-secondary btn-xs"
+                            title="即時模擬預覽"
+                          >
+                            🔍
+                          </button>
+                          <button
+                            onClick={() => removeCard(index)}
+                            className="btn btn-danger-outline btn-xs"
+                            title="刪除本題"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {cards.map((card, index) => (
-                      <tr
-                        key={card.localId}
-                        className={index === previewIndex ? 'table-row-active' : ''}
-                        onClick={(e) => {
-                          const tag = (e.target as HTMLElement).tagName
-                          if (['INPUT', 'SELECT', 'BUTTON', 'TEXTAREA'].includes(tag)) return
-                          setPreviewIndex(index)
-                        }}
-                      >
-                        <td>
-                          <input
-                            className="cell-input"
-                            value={card.word}
-                            onChange={(e) => updateCard(card.localId, { word: e.target.value })}
-                          />
-                        </td>
-                        <td>
-                          <textarea
-                            className="cell-input"
-                            rows={5}
-                            value={card.sentence}
-                            onChange={(e) => updateCard(card.localId, { sentence: e.target.value })}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            className="cell-input"
-                            value={card.notes}
-                            onChange={(e) => updateCard(card.localId, { notes: e.target.value })}
-                          />
-                        </td>
-                        <td>
-                          <div className="row-actions">
-                            <button
-                              onClick={() => setPreviewIndex(index)}
-                              className="btn btn-secondary btn-xs"
-                              title="即時模擬預覽"
-                            >
-                              🔍
-                            </button>
-                            <button
-                              onClick={() => removeCard(index)}
-                              className="btn btn-danger-outline btn-xs"
-                              title="刪除本題"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        )}
-
-        {message && (
-          <p className={`text-sm ${message.type === 'ok' ? 'text-success' : 'text-danger'}`}>
-            {message.text}
-          </p>
-        )}
-      </section>
-
-      {/* 右欄：卡片預覽 */}
-      <section className="flex flex-col gap-6">
-        <ClozeSimulator
-          key={previewCard === SAMPLE_PREVIEW_CARD ? 'sample' : previewIndex}
-          card={previewCard}
-        />
-        <AnkiConnectSetupPanel />
-      </section>
+        </div>
+      )}
 
       {/* 讓模擬器能比照 Anki 內部渲染數學公式，而不是顯示未渲染的原始語法。 */}
       <Script id="mathjax-config" strategy="afterInteractive">

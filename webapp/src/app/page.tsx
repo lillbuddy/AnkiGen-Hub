@@ -31,12 +31,15 @@ export default async function Home({
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12">
-      <div className="mb-10 text-center">
-        <h1 className="mb-3 font-display text-3xl font-extrabold tracking-tight text-text-primary">
-          把讀書筆記與圖片，變成 Anki 卡片
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mb-12 text-center">
+        <span className="hero-eyebrow mb-5">✨ AI 輔助的 Anki 製卡工具</span>
+        <h1 className="mb-4 font-display text-3xl font-extrabold leading-tight tracking-tight text-text-primary sm:text-5xl">
+          把讀書筆記與圖片，
+          <br className="sm:hidden" />
+          變成 <span className="hero-highlight">Anki 卡片</span>
         </h1>
-        <p className="text-sm text-text-secondary">選擇下面的工具開始使用。</p>
+        <p className="text-base text-text-secondary">選擇下面的工具開始使用。</p>
       </div>
 
       {params.drive_connected && (
@@ -48,7 +51,7 @@ export default async function Home({
         </p>
       )}
 
-      <div className="mx-auto mb-6 grid max-w-4xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mx-auto mb-8 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Link href="/tools/mcq" className="tool-card">
           <div className="tool-icon">📝</div>
           <h2 className="mb-2 font-display text-lg font-bold text-text-primary">文字選擇題產生器</h2>
@@ -59,7 +62,7 @@ export default async function Home({
         </Link>
 
         <Link href="/tools/slides" className="tool-card">
-          <div className="tool-icon">🖼️</div>
+          <div className="tool-icon tool-icon-violet">🖼️</div>
           <h2 className="mb-2 font-display text-lg font-bold text-text-primary">圖片標記工具</h2>
           <p className="flex-1 text-sm text-text-secondary">
             選取本機圖片並重新命名，接著選擇匯出成選擇題（AI 還能幫你產生誘答性的干擾選項）或 Image
@@ -69,7 +72,7 @@ export default async function Home({
         </Link>
 
         <Link href="/tools/cloze" className="tool-card">
-          <div className="tool-icon">🔤</div>
+          <div className="tool-icon tool-icon-teal">🔤</div>
           <h2 className="mb-2 font-display text-lg font-bold text-text-primary">克漏字卡片產生器</h2>
           <p className="flex-1 text-sm text-text-secondary">
             輸入想背的單字清單，AI 會針對每個單字生成一句例句並自動挖空，做成 Anki
@@ -103,7 +106,7 @@ export default async function Home({
             已登入：<span className="font-mono">{user.email}</span>
           </span>
         ) : (
-          <div className="card-panel flex w-full flex-col items-center gap-3 p-6 text-center">
+          <div className="card-panel mx-auto flex w-full max-w-2xl flex-col items-center gap-3 p-6 text-center">
             <p className="text-sm text-text-secondary">
               免登入即可使用上方工具產生卡片、下載 CSV 或直接存入 Anki。想把卡組存進「歷史紀錄」方便之後查找、或串接
               Google Drive 保存圖片，才需要登入。
